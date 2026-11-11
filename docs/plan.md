@@ -97,7 +97,7 @@ Nothing in this slice can spend. At its end: a deploy with the cap at 0, 20 real
 
 - `decide(signs: Signs, today: string): Decision` with `Decision = { verdict, rule, lastSeen, lastSeenFrom, why, evidence }`. The nine rules of the design, first match wins, thresholds from `limits.ts`.
 - Tests: every row of the table in section 5 of the design, each rule on its own, and that a link that could not be read today decides nothing.
-- `src/core/sheet.ts`: `knockCells(row): string[]` and `KNOCK_HEADER`, the fifteen columns that come back. No cell of Knock's begins with `=`, `+`, `-` or `@`.
+- `src/core/sheet.ts`: `knockCells(row): string[]` and `KNOCK_HEADER`, the thirteen columns that come back. No cell of Knock's begins with `=`, `+`, `-` or `@`.
 
 ### Task 7: the TinyFish calls
 
@@ -130,7 +130,7 @@ Nothing in this slice can spend. At its end: a deploy with the cap at 0, 20 real
 
 - `POST /api/lists`, `GET /api/lists/:id`, `GET /api/lists/:id/rows`, `GET /api/lists/:id/csv`, `POST /api/lists/:id/carry-on`, and plain pages `/` and `/l/:id` that show counts and what is being done now.
 - At most three new lists a day from visitors; my own lists come in with the admin token.
-- Tests: a sheet goes in and the same cells come back with the fifteen columns added; each refusal says why.
+- Tests: a sheet goes in and the same cells come back with the thirteen columns added; each refusal says why.
 
 ### Task 11: on the real plan
 
