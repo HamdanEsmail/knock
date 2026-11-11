@@ -1,0 +1,171 @@
+# Knock: build plan
+
+12 November 2026. The design is `docs/specs/2026-11-11-knock-design.md`; this is the order I build it in and the decisions the design left to the build.
+
+**Goal.** A spreadsheet of 500 or more companies goes in; the same sheet comes back with a verdict, the date the company was last seen and links to the evidence on every row.
+
+**How it is built.** One Cloudflare Worker on the free plan: Hono for pages and API, D1 for lists and rows, one Workflow that works a list in short legs. Every sign is read from a live page by TinyFish Fetch or TinyFish Search; TinySet adds what a company's own site cannot say. The verdict is a pure function of the signs.
+
+**Stack.** TypeScript (ESM, strict), Hono 4.13.16 with hono/jsx, Wrangler 4.157.0, Vitest 5.1.0 with the Cloudflare pool. The same versions as Upstream, and no other dependency.
+
+## Rules for the whole build
+
+- Tests never reach the network: every outside call in a test is answered by a stand-in that throws on anything it was not told about.
+- A test is written and seen failing before the code that makes it pass.
+- A leg makes at most 40 requests to other hosts, counted with every step tried twice.
+- The free plan allows 50 database queries in one run. Many rows are therefore written by one statement (`json_each`), never one statement a row.
+- A failed call is not a sign. A search that was refused never becomes "nothing new"; a Fetch call that failed as a whole never becomes a result for its rows.
+- Nothing paid happens while `SPEND_CAP_USD` is 0, and it is 0 in `wrangler.jsonc`.
+- The TinyFish key lives in `.dev.vars` and in the Worker's secrets, and is never printed or logged.
+- Every page carries "Built by Hamdan Esmail", linked to my GitHub. A page that waits shows that it is working.
+- All numbers that bound what Knock does sit in `src/core/limits.ts`.
+
+## What I checked before planning (11 November, all free)
+
+- **"The address no longer exists" is real.** Fetch answers `invalid_url` for 14 of the 100 probe addresses. I asked DNS about each: none of the 14 resolves. Every other kind of failure (error, time-out, blocked, empty) resolves. So `invalid_url` on a well-formed address means the name is gone.
+- **TinySet keeps a list of 50 as written.** I made an empty dataset with 50 names in its description (40 with an address, 10 marked "no website known"). The stored description is the one I sent, character for character, and the wallet did not move. Whether it opens one search per name at this size is what the gate set shows.
+- **Cloudflare's limits (docs read 11 November).** One run: 50 requests to other hosts, 50 database queries, 10 ms of processing a step, a step's result at most 1 MiB. One query: at most 100 bound values, a value at most 2 MB.
+
+## Decisions the design left to the build
+
+- **Groups.** A list is worked 40 rows at a time, each group through every stage before the next begins: doors, search, second knock on the doors that failed, search again where a second knock changed the address, reading, verdict. Doors on the wall therefore light up group by group, and a list that stops has whole rows finished.
+- **Run ids carry an attempt number**: `<list>-a<attempt>-g<group>-<stage>-<turn>`. "Carry on" raises the attempt, so a run that died can be replaced, and a run from an older attempt stops at its next step.
+- **Only findings are stored**, not pages: what the door said, the links found, the dates. A row's signs are a few hundred bytes.
+- **A second knock** goes to doors that answered with an error, timed out, did not resolve, or could not be asked. Not to doors that block readers.
+- **Search windows.** Last 12 months; if nothing, 12 to 36 months; if nothing, any time. Dates arrive as "May 7, 2026": they are parsed strictly, an unknown shape is no date, and a hit on another site is dropped.
+- **The newest hit is read.** When the page states its own date, that date is used and named "the page's own date"; otherwise the index's date is used and named "date from search". When the page's own date falls outside the window, the next hit is read as well.
+- **Reading allowance.** Knock counts the pages it reads successfully. 800 a day are free to it (the account has 1,000, and I use it for other things). Beyond that a list waits for midnight UTC, or, with the cap above 0, reads on at $0.001 a page up to $2.
+- **Search pace.** 25 a minute across all lists, counted in the database.
+- **One key.** Knock uses my second TinyFish account for everything.
+
+## Things most likely to bite a visitor, each pinned by a test
+
+1. A CSV saved by Excel: a byte-order mark, CRLF line ends, semicolons or tabs between cells.
+2. Addresses written loosely: `stripe.com`, `WWW.Stripe.com/`, `http://stripe.com/about`, and things that are no address: an email, `n/a`, `-`, an empty cell.
+3. A sheet with names only, or with the same company twice.
+4. A file that is empty, has a header only, has more than 1,000 rows or is too large: refused with a sentence that says why.
+5. Names and cells in other scripts and with accents: returned byte for byte, and matched without breaking.
+
+---
+
+## Slice 1: the free core
+
+Nothing in this slice can spend. At its end: a deploy with the cap at 0, 20 real rows, then the whole 590.
+
+### Task 1: the frame
+
+**Files:** `package.json`, `tsconfig.json`, `vitest.config.ts`, `wrangler.jsonc`, `.gitignore`, `LICENSE`, `migrations/0001_init.sql`, `src/index.ts`, `src/env.ts`, `src/app.tsx`, `src/core/limits.ts`, `tests/setup.ts`, `tests/env.d.ts`, `tests/helpers/fetch-mock.ts`, `tests/frame.test.ts`.
+
+- `Env`: `DB`, `ASSETS`, `TINYFISH_API_KEY`, `ADMIN_TOKEN`, `SPEND_CAP_USD?`, `LIST_WORKFLOW: Workflow<ListParams>`, `PUBLIC_BASE_URL`.
+- Tables: `lists`, `rows` (key `list_id, n`), `limits` (key `day, name`), `spend`, `sets`, `waves`.
+- Test: the migration applies and `GET /api/stats` answers `{ lists: 0, rows: 0, spend_usd: 0 }`.
+
+### Task 2: reading and writing a sheet
+
+**Files:** `src/core/csv.ts`, `src/core/columns.ts`, `tests/csv.test.ts`, `tests/columns.test.ts`.
+
+- `parseCsv(text: string): string[][]` (quotes, doubled quotes, commas and line breaks inside cells, CRLF, a byte-order mark, empty lines dropped, the separator found from the first line: comma, semicolon or tab).
+- `toCsv(rows: string[][]): string` (CRLF, quotes only where needed). `parseCsv(toCsv(x))` gives `x` back.
+- `guessColumns(header: string[], sample: string[][]): { name: number; address: number | null }` from the header's words (company, name, startup, organisation; website, url, domain, site, homepage, link), then from what the cells hold.
+
+### Task 3: addresses, names and dates
+
+**Files:** `src/core/address.ts`, `src/core/names.ts`, `src/core/dates.ts`, tests of the same names.
+
+- `cleanAddress(raw: string): string | null` gives `https://host/path` or null for no address. `hostOf(url)`, `siteOf(host)` (the registrable part, with a short list of two-part endings such as `co.uk`), `sameSite(a, b)`.
+- `nameKey(name)` (letters and digits, lower case, any script), `namesCompany(text: string, name: string): boolean` (the name as a whole word, or its key inside a host).
+- `searchDay(v: unknown): string | null` ("May 7, 2026", "7 May 2026" and ISO forms give `2026-05-07`; anything else null), `monthsAgo(day, today): number`, `httpDay(v)` for the server's date.
+
+### Task 4: the door
+
+**Files:** `src/core/signs.ts` (the types of every sign), `src/core/door.ts`, `tests/door.test.ts`, `tests/fixtures/doors.json` (real answers saved from the 100-site probe, cut short).
+
+- `readDoor(read: PageRead, name: string, address: string): DoorSign`. Kinds: `answers`, `forwards` (with the host it leads to and whether the page there names the company), `for_sale`, `nearly_empty` (under 400 characters), `gone`, `error`, `blocked`, `timed_out`, `no_address`, `not_asked`.
+- `findLink(links: string[], kind: "jobs" | "signup", site: string): string | null`.
+- Tests from the fixtures: one that loads, one that forwards and names the company, one that forwards and does not, one for sale, one nearly empty, and each kind of failure.
+
+### Task 5: new pages
+
+**Files:** `src/core/pages.ts`, `tests/pages.test.ts`.
+
+- `newestHit(results: unknown[], site: string, today: string): Hit | null` (only hits on the company's site, strict dates, none in the future, the newest).
+- `nextWindow(asked: Window | null, found: boolean): Window | null` over `"12" | "36" | "any"`, and `windowDates(w, today): { after?: string; before?: string }`.
+
+### Task 6: the verdict
+
+**Files:** `src/core/verdict.ts`, `tests/verdict.test.ts`.
+
+- `decide(signs: Signs, today: string): Decision` with `Decision = { verdict, rule, lastSeen, lastSeenFrom, why, evidence }`. The nine rules of the design, first match wins, thresholds from `limits.ts`.
+- Tests: every row of the table in section 5 of the design, each rule on its own, and that a link that could not be read today decides nothing.
+- `src/core/sheet.ts`: `knockCells(row): string[]` and `KNOCK_HEADER`, the fifteen columns that come back. No cell of Knock's begins with `=`, `+`, `-` or `@`.
+
+### Task 7: the TinyFish calls
+
+**Files:** `src/tinyfish/client.ts`, `src/tinyfish/fetch.ts`, `src/tinyfish/search.ts`, `src/tinyfish/wallet.ts`, `tests/tinyfish.test.ts`.
+
+- `readPages(env, urls: string[]): Promise<{ ok: true; pages: PageRead[] } | { ok: false; error: string }>`: live reads (`ttl: 0`), with links and the server's date, at most 5 addresses. A call that fails as a whole is `ok: false`.
+- `searchSite(env, query: string, host: string, dates): Promise<{ ok: true; results: unknown[] } | { ok: false; error: string }>`.
+- `readBalance(env): Promise<number>`, as in Upstream.
+
+### Task 8: lists and rows in the database
+
+**Files:** `src/list/store.ts`, `src/list/create.ts`, `tests/store.test.ts`.
+
+- `createList(env, input: { title, source, csv, nameCol?, addressCol?, owner }): Promise<{ id } | { refused: string }>`: reads the sheet, cleans every address, writes all rows in a few statements, marks rows without an address.
+- `loadGroup(db, listId, group): Promise<RowState[]>`, `saveRows(db, listId, patches: RowPatch[]): Promise<void>` (one statement), `takeMany` and `countUp` for the daily counters, `wallOf(db, listId)`.
+- Tests: 1,000 rows are written with fewer than ten queries; a patch changes only what it names.
+
+### Task 9: the legs
+
+**Files:** `src/list/stages.ts` (what each stage owes and does), `src/list/run.ts`, `src/list/workflow.ts`, `src/list/carry.ts`, `tests/pipeline.test.ts`, `tests/workflow.test.ts`.
+
+- `type Leg = { group: number; stage: Stage; turn: number }`, `Stage = "doors" | "search" | "doors2" | "search2" | "read" | "verdict"`.
+- `runLeg(env, listId, attempt, leg, step): Promise<void>` works stages in order while it has calls left (18 a leg, four reads at a time), then hands over. A leg whose attempt is no longer the list's stops.
+- `legId(listId, attempt, leg)`, `handOver(env, listId, attempt, leg)`, `carryOn(env, listId, now): Promise<"started" | "still working" | "done">` (only after ten minutes without movement).
+- Tests, with a stand-in world of pages and search answers and a stand-in Workflow that refuses an id it has seen: a list of 90 rows finishes with a verdict on every row; no leg passes 40 outside requests with every step tried twice; a refused search and a failed Fetch call leave the row owed, and after three tries say "could not be asked"; a list stopped in the middle carries on and finishes; an old attempt stops; the reading allowance makes a list wait and say so.
+
+### Task 10: the way in and the way out
+
+**Files:** `src/app.tsx`, `src/list/csv-out.ts`, `src/site/layout.tsx`, `src/site/list.tsx`, `tests/routes.test.ts`.
+
+- `POST /api/lists`, `GET /api/lists/:id`, `GET /api/lists/:id/rows`, `GET /api/lists/:id/csv`, `POST /api/lists/:id/carry-on`, and plain pages `/` and `/l/:id` that show counts and what is being done now.
+- At most three new lists a day from visitors; my own lists come in with the admin token.
+- Tests: a sheet goes in and the same cells come back with the fifteen columns added; each refusal says why.
+
+### Task 11: on the real plan
+
+Deploy with the cap at 0 (my own yes first). Then, in this order: 20 rows; read the Workflow runs for processing time and request counts; stop a run in the middle and carry on; all 590. What I measure sets the sizes left open in the design.
+
+## Slice 2: TinySet
+
+### Task 12: sets
+
+**Files:** `src/tinyfish/datasets.ts`, `src/outside/spec.ts`, `src/outside/match.ts`, tests.
+
+- `specFor(rows: { name; address }[]): Spec` (the list in the description, the name as key, a row without an address written as "no website known"); two rows with the same name never share a set.
+- `matchRows(sent, returned): { matched: Map<number, OutsideSign>; offList: string[]; missing: number[] }`.
+- A source on Y Combinator's own site is shown and decides nothing, so the scoring against that record stays clean.
+
+### Task 13: waves and the books
+
+**Files:** `src/outside/pick.ts`, `src/outside/wave.ts`, `src/outside/book.ts`, `tests/outside.test.ts`.
+
+- A wave claims its rows and saves each empty dataset's id before any paid fill. The fill step reads the dataset first and never posts a second fill for one already running or done.
+- The wallet is read before a wave and ten minutes after its last set ends; the wave is booked at its fall, never more than its rows at the rate card, and at the rate card when the wallet cannot say.
+- Tests: "the fill was posted and the step then failed" starts no second fill; "Carry on" during a wave reads the set again; nothing starts when the wallet cannot be read or the cap could be passed; a refill happens once.
+
+### Task 14: the gate
+
+Deploy with the cap at 20 (my own yes first). Fifty rows mixed on purpose through `POST /api/admin/lists/:id/wave`. It passes with at least 35 usable rows and none from outside the list. Upstream's traces run first, and I check Upstream's "charged" mark after each wave.
+
+## Slice 3: the board
+
+- **Task 15.** The pages in the look I chose: the wall, the departure board, a row's page, the working state.
+- **Task 16.** "Knock on one door": `POST /api/knock`, ten an hour for a visitor.
+- **Task 17.** A Google Sheet link, and the preview that lets a visitor change the two columns.
+- **Task 18.** How it works, the API page, the stats, the spend at the foot.
+- **Task 19.** Scoring against Y Combinator's record, a second list of about 100 rows, and a stranger's visit.
+
+## Slice 4: handing it in
+
+The README, the runbook, the build log, the film (sample styles first), the form notes and the posts.

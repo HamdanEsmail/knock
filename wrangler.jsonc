@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "knock",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "knock",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "workflows": [
+    {
+      "name": "knock-list",
+      "binding": "LIST_WORKFLOW",
+      "class_name": "ListWorkflow"
+    }
+  ],
+  "vars": {
+    "PUBLIC_BASE_URL": "https://knock.hamdanesmail12-7a9.workers.dev",
+    // The most Knock may spend in total, in dollars. 0 means nothing paid ever happens.
+    "SPEND_CAP_USD": "0"
+  },
+  "assets": {
+    "directory": "./public"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

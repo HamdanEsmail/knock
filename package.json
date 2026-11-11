@@ -1,0 +1,30 @@
+{
+  "name": "knock",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Knock: hand in a spreadsheet of companies and get it back with a verdict on every row (alive, slowing down or zombie), the date each was last seen and links to the evidence. TinyFish does the reading.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit && vitest run && wrangler deploy --dry-run",
+    "migrate:local": "wrangler d1 migrations apply knock --local",
+    "migrate:remote": "wrangler d1 migrations apply knock --remote"
+  },
+  "dependencies": {
+    "hono": "4.13.16"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.5.1",
+    "@cloudflare/workers-types": "5.20261103.1",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0",
+    "wrangler": "4.157.0"
+  }
+}
