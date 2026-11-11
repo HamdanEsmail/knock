@@ -59,6 +59,8 @@ export type PagesSign = {
   second: Hit | null;
   /** Dated pages on the site in that window. */
   count: number;
+  /** Pages of the site the index lists without a date, in the last window asked. */
+  undated: number;
   /** Set when Search could not be asked, after every try. Never set for "nothing found". */
   failed: string | null;
 };
