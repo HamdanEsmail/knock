@@ -60,3 +60,7 @@ export const STALLED_MS = 600_000;
 
 /** Rows on one page of the board. */
 export const BOARD_ROWS = 50;
+
+/** How much of a page's text and how many of its links are looked at. */
+export const PAGE_CHARS = 20_000;
+export const LINKS_MAX = 300;
