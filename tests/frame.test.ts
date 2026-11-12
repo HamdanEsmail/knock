@@ -15,7 +15,7 @@ describe("the frame", () => {
   it("answers the stats with nothing in them yet", async () => {
     const res = await call("/api/stats");
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ lists: 0, rows: 0, alive: 0, slowing_down: 0, zombie: 0, could_not_tell: 0, spend_usd: 0 });
+    expect(await res.json()).toEqual({ lists: 0, rows: 0, decided: 0, alive: 0, slowing_down: 0, zombie: 0, could_not_tell: 0, spend_usd: 0 });
   });
 
   it("answers an unknown path with 404", async () => {

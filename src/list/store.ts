@@ -298,7 +298,8 @@ export async function rowsLeft(db: D1Database, listId: string): Promise<{ left: 
   return { left: row?.left ?? 0, first: row?.first ?? null };
 }
 
-export type Totals = { lists: number; rows: number; alive: number; slowing_down: number; zombie: number; could_not_tell: number; spend_usd: number };
+/** `rows` is every row handed in; `decided` is those that have a verdict. */
+export type Totals = { lists: number; rows: number; decided: number; alive: number; slowing_down: number; zombie: number; could_not_tell: number; spend_usd: number };
 
 /** The figures at the foot of every page and at /api/stats. */
 export async function totals(db: D1Database): Promise<Totals> {
@@ -309,9 +310,11 @@ export async function totals(db: D1Database): Promise<Totals> {
   ]);
   const by = new Map((rows?.results ?? []).map((r) => [r.verdict, Number(r.n)]));
   const of = (verdict: string) => by.get(verdict) ?? 0;
+  const rowsInAll = [...by.values()].reduce((a, b) => a + b, 0);
   return {
     lists: Number(lists?.results[0]?.lists ?? 0),
-    rows: [...by.values()].reduce((a, b) => a + b, 0),
+    rows: rowsInAll,
+    decided: rowsInAll - (by.get(null) ?? 0),
     alive: of("alive"),
     slowing_down: of("slowing down"),
     zombie: of("zombie"),

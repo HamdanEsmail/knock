@@ -171,6 +171,16 @@ describe("watching a list", () => {
   });
 });
 
+describe("the totals", () => {
+  it("count a row as decided only when it has a verdict, in the API and at the foot of every page", async () => {
+    const id = await handIn();
+    await decide(id);
+    expect(await (await call("/api/stats")).json()).toEqual({ lists: 1, rows: 3, decided: 2, alive: 1, slowing_down: 0, zombie: 1, could_not_tell: 0, spend_usd: 0 });
+    const html = await (await call("/")).text();
+    expect(html).toContain("1 list · 2 rows decided · TinyFish spend $0.00");
+  });
+});
+
 describe("the sheet that comes back", () => {
   it("is the visitor's own sheet, cell for cell, with thirteen columns added", async () => {
     const id = await handIn();

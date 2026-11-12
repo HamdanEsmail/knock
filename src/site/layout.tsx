@@ -78,7 +78,7 @@ export function Layout(props: { title: string; description: string; refresh?: nu
         <footer class="foot">
           <div class="wrap">
             <span>
-              {t.lists} {t.lists === 1 ? "list" : "lists"} · {t.rows} rows decided · TinyFish spend ${t.spend_usd.toFixed(2)}
+              {t.lists} {t.lists === 1 ? "list" : "lists"} · {t.decided} rows decided · TinyFish spend ${t.spend_usd.toFixed(2)}
             </span>
             <span>
               Built by{" "}
