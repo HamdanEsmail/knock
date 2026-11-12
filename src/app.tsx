@@ -8,6 +8,7 @@ import type { Env } from "./env";
 import { carryOn } from "./list/carry";
 import { createList, type NewList } from "./list/create";
 import { countsOf, rowOut, sheetOut } from "./list/csv-out";
+import { decideListAgain } from "./list/redecide";
 import { FIRST_LEG } from "./list/run";
 import { readSheetLink } from "./list/sheet-link";
 import { deleteList, featuredList, getList, listRows, patchList, totals, type Totals } from "./list/store";
@@ -175,6 +176,15 @@ export function createApp() {
     if (!isAdmin(c)) return forbidden(c);
     await deleteList(c.env.DB, c.req.param("id"));
     return c.json({ deleted: c.req.param("id") });
+  });
+
+  // Applies today's rules to the signs a finished list already holds. Nothing is asked again.
+  app.post("/api/admin/lists/:id/decide-again", async (c) => {
+    if (!isAdmin(c)) return forbidden(c);
+    const done = await decideListAgain(c.env, c.req.param("id"), new Date());
+    if (done === "not found") return missing(c);
+    if (done === "not done") return c.json({ error: "list_not_done", message: "The list is still being checked." }, 409);
+    return c.json(done);
   });
 
   // A set of rows put to TinySet. It is the part that costs money, so only I can start it.

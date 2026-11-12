@@ -320,6 +320,17 @@ describe("my own routes", () => {
     expect((await call("/api/admin/sets/s123/carry-on", { method: "POST", headers: admin })).status).toBe(404);
   });
 
+  it("decide a finished list again from its stored signs, with the admin token only", async () => {
+    const id = await handIn();
+    expect((await call(`/api/admin/lists/${id}/decide-again`, { method: "POST" })).status).toBe(403);
+    expect((await call(`/api/admin/lists/${id}/decide-again`, { method: "POST", headers: admin })).status).toBe(409);
+    await decide(id);
+    await env.DB.prepare("UPDATE lists SET status = 'done' WHERE id = ?").bind(id).run();
+    const res = await call(`/api/admin/lists/${id}/decide-again`, { method: "POST", headers: admin });
+    expect(await res.json()).toMatchObject({ rows: 3, decided: 2 });
+    expect((await call("/api/admin/lists/nosuchlist/decide-again", { method: "POST", headers: admin })).status).toBe(404);
+  });
+
   it("remove a list's sets with the list", async () => {
     const id = await handIn();
     await env.DB.prepare("INSERT INTO sets (id, list_id, rows, status, created_at) VALUES ('s1', ?, '[0]', 'booked', '2026-11-12T00:00:00Z')").bind(id).run();
