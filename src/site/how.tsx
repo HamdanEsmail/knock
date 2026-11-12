@@ -72,6 +72,10 @@ export function HowPage({ base, totals }: { base: string; totals: Totals }) {
           <li>The home page is nearly empty and nothing else was found: zombie.</li>
           <li>Anything else: could not tell, with the reason.</li>
         </ol>
+        <p>
+          Rules 3, 4, 7 and 8 rest on what the company's own address shows. When TinySet says the company still operates but gave no source Knock could read and that names it, Knock does not
+          call the company a zombie on those signs alone: the row says could not tell, and gives both facts.
+        </p>
 
         <h2>Where TinySet comes in</h2>
         <p>
@@ -81,6 +85,11 @@ export function HowPage({ base, totals }: { base: string; totals: Totals }) {
         <ul>
           <li>A row that comes back under a name that is not on the list, or on another website than the one sent, is thrown away.</li>
           <li>Every source link is read by Knock itself, and counts only when the page could be read and names the company.</li>
+          <li>
+            A renamed company's new site does not carry its old name. A new page on the site its old address now leads to counts all the same, once a source that names the old name was read.
+            Without such a source it does not, because an address that someone else took over would look the same.
+          </li>
+          <li>The day a company that still runs was renamed or bought counts as a day it was seen.</li>
           <li>Rows that did not come back get one more fill. After that the row says "TinySet returned nothing".</li>
           <li>A set is asked for once. The wallet is read before and after it, and its fall is what the set is booked at.</li>
           <li>On the example list, a source on Y Combinator's own site is shown and decides nothing, because that record is what Knock is scored against.</li>

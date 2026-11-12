@@ -233,6 +233,16 @@ Deploy with the cap at 20 (my own yes first). Fifty rows mixed on purpose throug
 - **What it showed about the rules.** Seventeen running companies are still zombie. Three of them are zombie because TinySet found a shutdown or a merger with a source (Cleanly, DemocracyOS, Flirtey): there the record may be the one that is out of date. Eight were asked and TinySet said "operates", but with no link Knock could read or only an old one (Fountain, Assembly, Stealth Worker, Emailio, MagicBus, Protonet, Pave, BuildScience). Six were not asked. Fountain is the plain mistake: its own pages carry only an old date, TinySet says it operates, and the link it gave could not be read. A claim that cannot be read decides nothing, but it should make Knock say "could not tell" and not "zombie". That is the rule to change.
 - A renamed company is not caught as alive: TinySet said Plate IQ is now Ottimate and gave a page of ottimate.com, which does not name Plate IQ, so the link did not count.
 
+#### Tuning the rules on the 590 (12 November 2026)
+
+- I saved the signs of all 590 live rows and ran the verdict code over them unchanged first: it gave back every row exactly as the live list holds it, 0 of 590 different. Only then did I change a rule.
+- What I measured and left alone: an old date with an open door and a jobs or sign-up page (5 rows: 2 running, 3 gone) and a nearly empty home page (30 rows: 3 running). Neither separates the living from the dead.
+- What I changed: an unsourced "operates" from TinySet now stands in the way of "zombie"; a page on the site an address now leads to counts once a source naming the company was read; the day of a rename or purchase of a company that still runs is a dated sign; and a sentence that said "nothing on the site carries a date" names the listed page that could not be read.
+- On the saved signs the new rules change 13 rows and no others: Assembly, Fountain, Stealth Worker and Pave (running by the record) go from zombie to "could not tell"; Plate IQ and Verge Genomics (running, both renamed) go from slowing down to alive; VINEBOX, Monthli and Ubiq (gone by the record) go from zombie to "could not tell"; four sentences are reworded.
+- After it, against the record: running 244: alive 188, slowing down 20, zombie 13, could not tell 23. Gone 184: alive 9, slowing down 6, zombie 105, could not tell 64. Bought is unchanged.
+- The rules were changed after I had seen the record, so this is a score on the list they were tuned on, not a test of them.
+- Not fixed: a name with a part in brackets, as "VINEBOX (Usual Beverage Co.)", is looked for whole on a page and so is seldom found there.
+
 ## Slice 3: the board
 
 - **Task 15.** The pages in the look I chose: the wall, the departure board, a row's page, the working state.

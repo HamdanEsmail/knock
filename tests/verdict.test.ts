@@ -150,8 +150,8 @@ describe("each rule at its edges", () => {
     const says = { reads: [read("activity", "https://news.example/now", { namesIt: true })], outside: outside({ operates: true, outcome: "renamed to Bolt", activityDate: "2026-10-01", activityLink: "https://news.example/now" }) };
     expect(decide(signs({ door: door("gone"), ...says }), TODAY)).toMatchObject({ verdict: "alive", rule: 5, lastSeenFrom: "from TinySet's source" });
     expect(decide(signs({ door: door("forwards", { toHost: "bolt.com", namesIt: false }), ...says }), TODAY)).toMatchObject({ verdict: "alive", rule: 5 });
-    // The same claim without a link that could be read decides nothing.
-    expect(decide(signs({ door: door("gone"), outside: says.outside, reads: [read("activity", "https://news.example/now", { ok: false, error: "timeout" })] }), TODAY).rule).toBe(3);
+    // The same claim without a link that could be read makes nothing alive. It does stand in the way of "zombie".
+    expect(decide(signs({ door: door("gone"), outside: says.outside, reads: [read("activity", "https://news.example/now", { ok: false, error: "timeout" })] }), TODAY)).toMatchObject({ verdict: "could not tell", rule: 9 });
   });
 
   it("rule 5 turns on twelve months to the day", () => {
@@ -224,5 +224,111 @@ describe("each rule at its edges", () => {
       expect(d.why).not.toMatch(/^[=+\-@]/);
       expect(d.why.endsWith(".")).toBe(true);
     }
+  });
+});
+
+
+describe("when TinySet says the company operates and gave nothing Knock could use", () => {
+  const claim = outside({ operates: true });
+  const DOUBT = " TinySet says it still operates, but gave no source that Knock could read and that names it.";
+
+  it("does not call it a zombie on a free sign alone: the address is gone", () => {
+    const d = decide(signs({ door: door("gone", { knocks: 2 }), outside: claim }), TODAY);
+    expect(d).toMatchObject({ verdict: "could not tell", rule: 9, why: `The address no longer exists. It was asked twice.${DOUBT}` });
+  });
+
+  it("nor when the address leads to a site that does not name it", () => {
+    const d = decide(signs({ door: door("forwards", { toHost: "other.com", namesIt: false, finalUrl: "https://other.com/" }), outside: claim }), TODAY);
+    expect(d).toMatchObject({ verdict: "could not tell", rule: 9, why: `The address now leads to other.com, which does not name Acme.${DOUBT}` });
+    expect(d.evidence[0]).toBe("https://other.com/");
+  });
+
+  it("nor when its newest dated sign is more than three years old", () => {
+    const d = decide(signs({ pages: pages(hit("2017-03-01"), "any"), reads: [read("hit", "https://acme.com/blog/post")], outside: claim }), TODAY);
+    expect(d).toMatchObject({ verdict: "could not tell", rule: 9, lastSeen: "2017-03-01", lastSeenFrom: "date from search" });
+    expect(d.why).toBe(`The newest dated sign read today is a page of its site that Search dates 1 Mar 2017, more than three years ago.${DOUBT}`);
+  });
+
+  it("nor when its home page is nearly empty", () => {
+    const d = decide(signs({ door: door("nearly_empty"), outside: claim }), TODAY);
+    expect(d).toMatchObject({ verdict: "could not tell", rule: 9, why: `The home page is nearly empty and nothing else was found.${DOUBT}` });
+  });
+
+  it("is the same when its link was read and does not name the company, or could not be read", () => {
+    const says = outside({ operates: true, activityDate: "2026-08-26", activityLink: "https://news.example/a" });
+    const unnamed = decide(signs({ door: door("nearly_empty"), outside: says, reads: [read("activity", "https://news.example/a", { namesIt: false })] }), TODAY);
+    const blocked = decide(signs({ door: door("nearly_empty"), outside: says, reads: [read("activity", "https://news.example/a", { ok: false, error: "bot_blocked" })] }), TODAY);
+    for (const d of [unnamed, blocked]) expect(d).toMatchObject({ verdict: "could not tell", rule: 9, lastSeen: null });
+  });
+
+  it("leaves an address that is for sale a zombie: that sign is the owner's own", () => {
+    expect(decide(signs({ door: door("for_sale"), outside: claim }), TODAY)).toMatchObject({ verdict: "zombie", rule: 2 });
+  });
+
+  it("changes nothing when the claim is that it no longer operates", () => {
+    const gone = outside({ operates: false, outcome: "shut down" });
+    expect(decide(signs({ door: door("gone"), outside: gone }), TODAY)).toMatchObject({ verdict: "zombie", rule: 3 });
+    expect(decide(signs({ door: door("nearly_empty"), outside: gone }), TODAY)).toMatchObject({ verdict: "zombie", rule: 8 });
+  });
+
+  it("keeps the zombie when the claim is backed by a link, and that link's date is the old one", () => {
+    const says = outside({ operates: true, activityDate: "2020-10-12", activityLink: "https://x.com/acme/status/1" });
+    const d = decide(signs({ door: door("gone"), outside: says, reads: [read("activity", "https://x.com/acme/status/1", { namesIt: true })] }), TODAY);
+    expect(d).toMatchObject({ verdict: "zombie", rule: 7, lastSeen: "2020-10-12", lastSeenFrom: "from TinySet's source" });
+  });
+});
+
+describe("a company that was renamed or bought and still runs", () => {
+  const moved = door("forwards", { toHost: "newname.com", namesIt: false, finalUrl: "https://newname.com/" });
+  const says = outside({ operates: true, outcome: "renamed to Newname", outcomeDate: "2023-12-12", outcomeSource: "https://newname.com/news/acme-is-now-newname", activityDate: "2026-10-06", activityLink: "https://newname.com/news/a-prize" });
+  const source = read("source", "https://newname.com/news/acme-is-now-newname", { namesIt: true });
+  const activity = read("activity", "https://newname.com/news/a-prize", { namesIt: false });
+
+  it("counts a new page on the site its address now leads to, once a source that names it was read", () => {
+    const d = decide(signs({ door: moved, outside: says, reads: [source, activity] }), TODAY);
+    expect(d).toMatchObject({ verdict: "alive", rule: 5, lastSeen: "2026-10-06", lastSeenFrom: "from TinySet's source" });
+    expect(d.why).toBe("Read today: a source that shows activity on 6 Oct 2026. The address on the sheet now leads to newname.com. TinySet says: renamed to Newname.");
+    expect(d.evidence[0]).toBe("https://newname.com/news/a-prize");
+  });
+
+  it("does not count that page without such a source: an address someone else took over would look the same", () => {
+    const d = decide(signs({ door: moved, outside: says, reads: [{ ...source, namesIt: false }, activity] }), TODAY);
+    expect(d).toMatchObject({ verdict: "could not tell", rule: 9 });
+    expect(d.why).toContain("does not name Acme");
+  });
+
+  it("does not count a page elsewhere that does not name it, whatever the source says", () => {
+    const elsewhere = outside({ ...says, activityLink: "https://news.example/a-prize" });
+    const d = decide(signs({ door: moved, outside: elsewhere, reads: [source, read("activity", "https://news.example/a-prize", { namesIt: false })] }), TODAY);
+    // The source's own day is still a dated sign: it shows the company at work on that day.
+    expect(d).toMatchObject({ verdict: "slowing down", rule: 6, lastSeen: "2023-12-12", lastSeenFrom: "from TinySet's source" });
+  });
+
+  it("takes the day it was renamed or bought as a sign of life, when the source was read and says it still runs", () => {
+    const recent = outside({ operates: true, outcome: "renamed to Newname", outcomeDate: "2026-05-27", outcomeSource: "https://news.example/renamed" });
+    const d = decide(signs({ door: moved, outside: recent, reads: [read("source", "https://news.example/renamed", { namesIt: true })] }), TODAY);
+    expect(d).toMatchObject({ verdict: "alive", rule: 5, lastSeen: "2026-05-27", lastSeenFrom: "from TinySet's source" });
+    expect(d.why).toBe("Read today: a source that shows activity on 27 May 2026. The address on the sheet now leads to newname.com. TinySet says: renamed to Newname.");
+  });
+
+  it("does not take that day when the company no longer operates", () => {
+    const closed = outside({ operates: false, outcome: "acquired by Big", outcomeDate: "2026-05-27", outcomeSource: "https://news.example/bought" });
+    const d = decide(signs({ door: moved, outside: closed, reads: [read("source", "https://news.example/bought", { namesIt: true })] }), TODAY);
+    expect(d).toMatchObject({ verdict: "zombie", rule: 1 });
+  });
+});
+
+describe("a listed page that could not be read", () => {
+  it("is named when the row is decided by its jobs or sign-up page, so the sentence does not say nothing is dated", () => {
+    const d = decide(
+      signs({
+        door: door("answers", { jobsLink: "https://acme.com/jobs" }),
+        pages: pages(hit("2024-06-12", "https://acme.com/form"), "36"),
+        reads: [read("hit", "https://acme.com/form", { ok: false, error: "target_http_error" }), read("jobs", "https://acme.com/jobs")],
+      }),
+      TODAY,
+    );
+    expect(d).toMatchObject({ verdict: "slowing down", rule: 6, lastSeen: "2024-06-12", lastSeenFrom: "date from search" });
+    expect(d.why).toBe("No dated page of the site could be read today, but the home page answers and its jobs page is there. Search lists a page dated 12 Jun 2024, which could not be read today.");
   });
 });

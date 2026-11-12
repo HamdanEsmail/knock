@@ -189,4 +189,9 @@ One cap for the whole build: **$20**, on my second TinyFish account. Prices are 
 
 - **Search pace (sections 3, 7 and 9).** Knock asks Search seven times a minute across all lists, not up to 30. On 12 November 2026 TinyFish's price list gave Search as 30 a minute and 500 an hour, and seven a minute stays under both. A list of 590 rows therefore takes hours, not minutes, and its page says what is being done the whole time.
 - **Reading (section 9).** Knock keeps to 800 pages a day of the account's 1,000, because I use the account for other things.
+- **The verdict (section 5), after the 590 and 150 rows through TinySet on 12 November 2026.** Three changes, each tried on the saved signs of all 590 rows before it went live:
+  - When TinySet says the company operates and gave no source Knock could read and that names it, rules 3, 4, 7 and 8 no longer say zombie: the row says "could not tell" with both facts. Such a claim still makes nothing alive. Rule 2 (for sale) is unchanged. A claim that it no longer operates, without a source, still changes nothing.
+  - A page on the site the sheet's address now leads to counts without naming the company, once a source that does name it was read. This is how a renamed company is seen (Plate IQ, now Ottimate). Without the source it does not count.
+  - The day a company that still runs was renamed or bought, read from a source that names it, is a dated sign.
+  - These were chosen after I had seen Y Combinator's record of the same rows, so the score on that list is a score on the list the rules were tuned on.
 - The other decisions made in the build are listed in `docs/plan.md`, under "Decisions the design left to the build".

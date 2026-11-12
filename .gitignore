@@ -11,3 +11,5 @@ dist/
 .vitest/
 .superpowers/
 .taste-skill/
+.scratch/
+tests/*.local.test.ts

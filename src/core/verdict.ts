@@ -24,14 +24,19 @@ export function decide(s: Signs, today: string): Decision {
 
   // What TinySet said counts only through a link that was read today and names the company.
   const out = s.outside?.returned ? s.outside : null;
-  const backing = (k: "source" | "activity", url: string | null): ReadItem | null => {
-    const item = out !== null && decides(url) ? readOk(k) : null;
-    return item !== null && item.namesIt !== false ? item : null;
-  };
-  const source = backing("source", out?.outcomeSource ?? null);
-  const activity = backing("activity", out?.activityLink ?? null);
+  const linked = (k: "source" | "activity", url: string | null): ReadItem | null => (out !== null && decides(url) ? readOk(k) : null);
+  const named = (item: ReadItem | null): ReadItem | null => (item !== null && item.namesIt !== false ? item : null);
+  const source = named(linked("source", out?.outcomeSource ?? null));
+  // A renamed company's new site does not name the old name. A page on the very site the
+  // sheet's address now leads to counts all the same, once a source that does name the company
+  // was read. Without such a source it does not: an address someone else took over looks the same.
+  const onNewSite = (item: ReadItem): boolean => door?.kind === "forwards" && door.toHost !== null && siteOf(hostOf(item.finalUrl ?? item.url)) === siteOf(door.toHost);
+  const activityLink = linked("activity", out?.activityLink ?? null);
+  const activity = named(activityLink) ?? (activityLink !== null && source !== null && onNewSite(activityLink) ? activityLink : null);
   const operates = out !== null && (source !== null || activity !== null) ? out.operates : null;
   const outcome = out?.outcome ?? null;
+  /** TinySet says the company operates, and nothing it gave could be used. It makes nothing alive, and it stands in the way of "zombie". */
+  const claimed = out !== null && out.operates === true && operates !== true;
 
   // The dated signs that were read today, newest first.
   const dated: Dated[] = [];
@@ -42,6 +47,8 @@ export function decide(s: Signs, today: string): Decision {
     dated.push({ day: own ?? hit.date, from: own !== null ? "the page's own date" : "date from search", url: item.finalUrl ?? item.url });
   }
   if (activity !== null && out?.activityDate && out.activityDate <= today) dated.push({ day: out.activityDate, from: "from TinySet's source", url: activity.finalUrl ?? activity.url });
+  // The day a company that still runs was renamed or bought is a day it was at work.
+  if (source !== null && operates === true && out?.outcomeDate && out.outcomeDate <= today) dated.push({ day: out.outcomeDate, from: "from TinySet's source", url: source.finalUrl ?? source.url });
   const open = kind === "answers" || (kind === "forwards" && door?.namesIt === true);
   if (door?.serverDate && door.finalUrl && open && monthsAgo(door.serverDate, today) >= ALIVE_MONTHS) dated.push({ day: door.serverDate, from: "the server's date for the home page", url: door.finalUrl });
   dated.sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0));
@@ -63,6 +70,10 @@ export function decide(s: Signs, today: string): Decision {
     evidence: unique([first, ...supporting]),
   });
 
+  /** A zombie by what Knock itself found; "could not tell" when TinySet says the company operates and could not show it. */
+  const zombie = (rule: number, why: string, first: string | null): Decision =>
+    claimed ? answer("could not tell", 9, `${why} TinySet says it still operates, but gave no source that Knock could read and that names it.`, first) : answer("zombie", rule, why, first);
+
   const twice = (door?.knocks ?? 1) >= 2 ? " twice" : "";
   const months = newest === null ? null : monthsAgo(newest.day, today);
   const said = outcome !== null && outcome !== "" ? ` TinySet says: ${outcome}.` : "";
@@ -79,10 +90,10 @@ export function decide(s: Signs, today: string): Decision {
   // 3. The address no longer exists, and nothing says the company operates under another.
   if (kind === "gone" && operates !== true) {
     const last = listed ? ` Search last lists a page there dated ${showDay(listed.date)}.` : "";
-    return answer("zombie", 3, `The address no longer exists.${twice ? " It was asked twice." : ""}${last}`, door?.asked ?? s.address);
+    return zombie(3, `The address no longer exists.${twice ? " It was asked twice." : ""}${last}`, door?.asked ?? s.address);
   }
   // 4. The address forwards to a site that does not name the company, and nothing says it still operates.
-  if (kind === "forwards" && door?.namesIt === false && operates !== true) return answer("zombie", 4, `The address now leads to ${door.toHost}, which does not name ${s.name}.`, doorLink);
+  if (kind === "forwards" && door?.namesIt === false && operates !== true) return zombie(4, `The address now leads to ${door.toHost}, which does not name ${s.name}.`, doorLink);
 
   // What the door adds to a verdict that a dated sign decides.
   const aside =
@@ -112,18 +123,21 @@ export function decide(s: Signs, today: string): Decision {
     // 6. The newest dated sign is 12 to 36 months old.
     if (months < ZOMBIE_MONTHS) return answer("slowing down", 6, `The newest dated sign read today is ${what(newest)}, ${months} months ago.${aside}`, newest.url);
     // 7. The newest dated sign is more than 36 months old.
-    return answer("zombie", 7, `The newest dated sign read today is ${what(newest)}, more than three years ago.${aside}`, newest.url);
+    return zombie(7, `The newest dated sign read today is ${what(newest)}, more than three years ago.${aside}`, newest.url);
   }
   // 6, without a date: the door answers and a jobs or sign-up page is there; or TinySet says it operates.
   if (open && (jobs !== null || signup !== null)) {
     const there = jobs !== null && signup !== null ? "its jobs and sign-up pages are there" : jobs !== null ? "its jobs page is there" : "its sign-up page is there";
-    return answer("slowing down", 6, `Nothing on the site carries a date, but the home page answers and ${there}.`, doorLink);
+    // A page Search lists with a date, which could not be read, is named: the site does carry a date.
+    const none = listed ? "No dated page of the site could be read today" : "Nothing on the site carries a date";
+    const also = listed ? ` Search lists a page dated ${showDay(listed.date)}, which could not be read today.` : "";
+    return answer("slowing down", 6, `${none}, but the home page answers and ${there}.${also}`, doorLink);
   }
   if (operates === true) return answer("slowing down", 6, `A source read today says it still operates${outcome ? ` (${outcome})` : ""}, but nothing dated was found.${aside}`, source?.finalUrl ?? source?.url ?? activity?.finalUrl ?? activity?.url ?? null);
   // 8. The page is nearly empty and nothing else was found.
   const unread = listed ? ` Search lists a page dated ${showDay(listed.date)}, which could not be read today.` : "";
   if (kind === "nearly_empty") {
-    return answer("zombie", 8, listed ? `The home page is nearly empty, and nothing else on the site could be read.${unread}` : "The home page is nearly empty and nothing else was found.", doorLink ?? door?.asked ?? null);
+    return zombie(8, listed ? `The home page is nearly empty, and nothing else on the site could be read.${unread}` : "The home page is nearly empty and nothing else was found.", doorLink ?? door?.asked ?? null);
   }
 
   // 9. Everything else, with the reason.
