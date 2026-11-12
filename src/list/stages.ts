@@ -120,7 +120,8 @@ export async function knock(env: Env, call: Knock[]): Promise<Knocked> {
   const patches = call.map((k): RowPatch => {
     const page = asked.pages.get(k.url);
     if (page === undefined || (!page.ok && page.error === NOT_ANSWERED)) return doorMissed(k, NOT_ANSWERED);
-    if (page.ok && !counted.has(k.url)) {
+    // A page TinyFish tried and could not read is on its record too, so it is one of the day's.
+    if (!counted.has(k.url)) {
       counted.add(k.url);
       read++;
     }
@@ -223,11 +224,11 @@ export async function readItems(env: Env, call: Reading[]): Promise<{ results: R
     const page = asked.pages.get(r.url);
     if (page === undefined || (!page.ok && page.error === NOT_ANSWERED)) return readMissed(r, NOT_ANSWERED);
     const base = { ...item(r.kind, r.url), tries: r.tries + 1, done: true };
-    if (!page.ok) return { n: r.n, kind: r.kind, item: { ...base, error: page.error } };
     if (!counted.has(r.url)) {
       counted.add(r.url);
       read++;
     }
+    if (!page.ok) return { n: r.n, kind: r.kind, item: { ...base, error: page.error } };
     // A page that is not on the company's own site counts only when it names the company.
     const namesIt = sameSite(page.finalUrl, r.home) ? null : namesCompany(`${page.title ?? ""}\n${page.text}`, r.name);
     return { n: r.n, kind: r.kind, item: { ...base, ok: true, finalUrl: page.finalUrl, title: page.title, pageDate: page.pageDate, namesIt } };

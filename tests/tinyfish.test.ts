@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { knock, readItems } from "../src/list/stages";
 import { countOf, countReads, readsLeft } from "../src/list/store";
 import { NOT_ANSWERED, readPages } from "../src/tinyfish/fetch";
 import { searchSite } from "../src/tinyfish/search";
@@ -92,6 +93,17 @@ describe("the reading allowance", () => {
     await env.DB.batch([countReads(env.DB, today(), 3), countReads(env.DB, today(), 4)]);
     expect(await countOf(env.DB, today(), "reads")).toBe(7);
     expect(await readsLeft(env, today())).toBe(793);
+  });
+
+  it("counts a page TinyFish tried and could not read, and not one it gave no answer for", async () => {
+    // TinyFish keeps a record of a page it tried and failed on, so that page is one of the day's.
+    const reply = { json: { results: [{ url: "https://a.com/", final_url: "https://a.com/", title: "A", text: "x".repeat(900) }], errors: [{ url: "https://b.com/", error: "bot_blocked" }] } };
+    fetchMock.intercept({ method: "POST", url: FETCH, reply });
+    const doors = ["a", "b", "c"].map((s, n) => ({ n, name: s, address: `https://${s}.com/`, url: `https://${s}.com/`, tries: 0, knocks: 1, alone: false }));
+    expect((await knock(env, doors)).read).toBe(2);
+    fetchMock.intercept({ method: "POST", url: FETCH, reply });
+    const pages = ["a", "b", "c"].map((s, n) => ({ n, kind: "hit" as const, url: `https://${s}.com/`, name: s, home: `https://${s}.com/`, tries: 0, alone: false }));
+    expect((await readItems(env, pages)).read).toBe(2);
   });
 
   it("adds 2,000 paid pages in all once a cap is set, and counts the ones already used on other days", async () => {
