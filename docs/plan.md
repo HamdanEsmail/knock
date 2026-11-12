@@ -264,6 +264,14 @@ Deploy with the cap at 20 (my own yes first). Fifty rows mixed on purpose throug
 - The deciding-again that follows a set ran on the tuned rules: the saved signs of all 590 rows give back the live list, 0 different.
 - This is still a score on the list the rules were tuned on.
 
+#### Names with a part in brackets (12 November 2026)
+
+- The fault the last set showed again: a cell that holds two names, as "Kenota (formerly ExVivo Labs)", was looked for whole. TinySet's row for it came back as "Kenota" and was thrown away, and a page that says "Kenota" did not name it. Eight of the 590 names are written that way.
+- Now a name has two parts: the one outside the brackets, and the first one inside them without the word that leads it in ("formerly", "aka"). A page or a host names the company by either. A part in brackets of fewer than four characters, as "(UK)", says too little and is not a name.
+- From TinySet the name as it was sent still comes first. The name outside the brackets leads to its row. The name inside them does so only for a row that was sent with an address, because then the site check stands behind it: another company may carry an old name. A short name that two rows of a set share leads to neither. Each of these is pinned by a test, and the two guards were broken on purpose to see their tests fail.
+- What it costs: "Shape (ShapeScale)" is now named by any page that uses the word "shape", as a row called "Shape" always was. A company whose name is an everyday word is named by any page that uses the word; "What it cannot tell" says so.
+- What it does not do: the eight rows of the 590 keep the signs they were read with, and Kenota's row still says "TinySet returned nothing". The change is for lists checked from now on. The saved signs of all 590 rows still give back the live list, 0 different.
+
 ## Slice 3: the board
 
 - **Task 15.** The pages in the look I chose: the wall, the departure board, a row's page, the working state.

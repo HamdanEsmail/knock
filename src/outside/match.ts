@@ -3,7 +3,7 @@
 // finds its own rows, so nothing it returns is taken on trust.
 import { cleanAddress, hostOf, siteOf } from "../core/address";
 import { dayOf } from "../core/dates";
-import { nameKey } from "../core/names";
+import { nameKey, nameParts } from "../core/names";
 import type { OutsideSign } from "../core/signs";
 import type { SetRow } from "./spec";
 
@@ -41,15 +41,44 @@ const siteIn = (v: unknown): string => {
 /** What a row that never came back is given, so the row says "TinySet returned nothing". */
 export const NOTHING_RETURNED: OutsideSign = { returned: false, operates: null, outcome: null, outcomeDate: null, outcomeSource: null, activityDate: null, activityLink: null };
 
+/**
+ * The rows a short name leads to. A sheet often writes two names in one cell, as
+ * "Kenota (formerly ExVivo Labs)", and TinySet returns the row as "Kenota". The name outside
+ * the brackets leads to its row. The name inside them does so only for a row that was sent
+ * with an address, because then the site check stands behind it: another company may carry an
+ * old name. A short name that two rows share leads to neither.
+ */
+function byShortName(sent: SetRow[]): Map<string, SetRow | null> {
+  const short = new Map<string, SetRow | null>();
+  const add = (key: string, row: SetRow): void => {
+    if (key !== "") short.set(key, short.has(key) && short.get(key) !== row ? null : row);
+  };
+  for (const row of sent) {
+    const { main, alias } = nameParts(row.name);
+    if (alias === null) continue;
+    add(nameKey(main), row);
+    if (row.address !== null) add(nameKey(alias), row);
+  }
+  return short;
+}
+
 export function matchRows(sent: SetRow[], returned: Record<string, unknown>[]): Matched {
   const byName = new Map(sent.map((r) => [nameKey(r.name), r]));
+  const short = byShortName(sent);
+  // The name as it was sent comes first. Then the name as a short form, and a name that came
+  // back with a part in brackets by the name outside them.
+  const rowFor = (name: string): SetRow | undefined => {
+    const whole = nameKey(name);
+    const outside = nameKey(nameParts(name).main);
+    return byName.get(whole) ?? short.get(whole) ?? byName.get(outside) ?? short.get(outside) ?? undefined;
+  };
   const matched = new Map<number, OutsideSign>();
   const offList: string[] = [];
   const wrongSite: string[] = [];
   for (const data of returned) {
     const name = text(data.company_name);
     if (name === null) continue;
-    const row = byName.get(nameKey(name));
+    const row = rowFor(name);
     if (row === undefined) {
       offList.push(name);
       continue;

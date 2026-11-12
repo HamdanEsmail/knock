@@ -84,6 +84,10 @@ export function HowPage({ base, totals }: { base: string; totals: Totals }) {
         </p>
         <ul>
           <li>A row that comes back under a name that is not on the list, or on another website than the one sent, is thrown away.</li>
+          <li>
+            A cell that holds two names, as "Kenota (formerly ExVivo Labs)", is found by either on a page. From TinySet the name inside the brackets counts only when the site that was
+            sent comes back with it.
+          </li>
           <li>Every source link is read by Knock itself, and counts only when the page could be read and names the company.</li>
           <li>
             A renamed company's new site does not carry its old name. A new page on the site its old address now leads to counts all the same, once a source that names the old name was read.
@@ -114,6 +118,7 @@ export function HowPage({ base, totals }: { base: string; totals: Totals }) {
           <li>A date from the search index is the day a page was first published. A page that is kept up to date can look older than it is.</li>
           <li>A verdict that rests on one search can change from one day to the next, because the index does.</li>
           <li>An address that someone else has taken over and filled with new pages can look alive. TinySet's part is what catches it.</li>
+          <li>A company whose name is an everyday word is named by any page that uses the word.</li>
         </ul>
 
         <h2>The sheet that comes back</h2>

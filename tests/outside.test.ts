@@ -83,6 +83,64 @@ describe("matching what came back to what was sent", () => {
   });
 });
 
+describe("matching a name that was sent with a part in brackets", () => {
+  const row = (data: Record<string, unknown>) => data;
+  const KENOTA = { n: 535, name: "Kenota (formerly ExVivo Labs)", address: "https://kenota.com/" };
+  const UTILITY = { n: 571, name: "UtilityScore (formerly Pando)", address: null };
+
+  it("takes the row that came back under the name outside the brackets, on the site that was sent", () => {
+    // What TinySet returned for this row on 12 November 2026, and Knock threw away.
+    const got = matchRows([KENOTA], [row({ company_name: "Kenota", website: "kenota.com", still_operates: true })]);
+    expect(got.matched.get(535)?.operates).toBe(true);
+    expect(got.offList).toEqual([]);
+    expect(got.missing).toEqual([]);
+  });
+
+  it("still throws it away on another site than the one sent", () => {
+    const got = matchRows([KENOTA], [row({ company_name: "Kenota", website: "kenota.io", still_operates: true })]);
+    expect(got.matched.size).toBe(0);
+    expect(got.wrongSite).toEqual(["Kenota (kenota.io, sent kenota.com)"]);
+    expect(got.missing).toEqual([535]);
+  });
+
+  it("takes the name inside the brackets only when the site that was sent stands behind it", () => {
+    const withSite = matchRows([KENOTA], [row({ company_name: "ExVivo Labs", website: "https://kenota.com/about", still_operates: false })]);
+    expect(withSite.matched.get(535)?.operates).toBe(false);
+    // A row sent without an address has no site to check. Another company may carry its old name.
+    const without = matchRows([UTILITY], [row({ company_name: "Pando", website: "pando.com", still_operates: true })]);
+    expect(without.matched.size).toBe(0);
+    expect(without.offList).toEqual(["Pando"]);
+    const byMain = matchRows([UTILITY], [row({ company_name: "UtilityScore", website: "", still_operates: false })]);
+    expect(byMain.matched.get(571)?.operates).toBe(false);
+  });
+
+  it("gives a short name to neither of two rows that share it", () => {
+    const sent = [
+      { n: 1, name: "Acme (formerly Zed)", address: "https://acme.com" },
+      { n: 2, name: "Bolt (formerly Zed)", address: "https://bolt.com" },
+    ];
+    const got = matchRows(sent, [row({ company_name: "Zed", website: "acme.com", still_operates: true })]);
+    expect(got.matched.size).toBe(0);
+    expect(got.offList).toEqual(["Zed"]);
+  });
+
+  it("gives a name to the row that carries it whole before a row that carries it as a part", () => {
+    const sent = [
+      { n: 1, name: "Shape (ShapeScale)", address: "https://shapescale.com" },
+      { n: 2, name: "Shape", address: "https://shape.com" },
+    ];
+    const got = matchRows(sent, [row({ company_name: "Shape", website: "shape.com", still_operates: true }), row({ company_name: "ShapeScale", website: "shapescale.com", still_operates: false })]);
+    expect(got.matched.get(2)?.operates).toBe(true);
+    expect(got.matched.get(1)?.operates).toBe(false);
+    expect(got.offList).toEqual([]);
+  });
+
+  it("takes a row that came back with a part in brackets for a name sent without one", () => {
+    const got = matchRows([{ n: 4, name: "Kenota", address: "https://kenota.com" }], [row({ company_name: "Kenota (formerly ExVivo Labs)", website: "kenota.com", still_operates: true })]);
+    expect(got.matched.get(4)?.operates).toBe(true);
+  });
+});
+
 describe("which rows go to TinySet", () => {
   const c = (n: number, name: string, kind: string | null, extra: Partial<Candidate> = {}): Candidate => ({ n, name, door: kind, namesIt: null, verdict: "could not tell", rule: 9, setId: null, ...extra });
 
