@@ -88,7 +88,7 @@ Rules 3, 4, 7 and 8 rest on what the company's own address shows. When TinySet s
 |---|---|
 | Fetch | Every address and every page: the home page, the newest page Search listed, the jobs page, the sign-up page, and every source link TinySet gives. Five addresses in one call. |
 | Search | The dated pages of one company's site, window by window. Its dates are what "last seen" most often rests on. |
-| TinySet | The rows a company's own site cannot decide: a site that is gone, for sale, silent, or that turns readers away. Fifty rows to a set. |
+| TinySet | The rows where an outside source can add the most: an address that leads elsewhere, no address at all, a site that is gone, silent, or that turns readers away. Fifty rows to a set. |
 | The wallet | Read before a set and ten minutes after it. A set is booked at what the wallet lost. |
 
 TinySet is built to find its own rows, so I had to make it keep to mine. The list is written into the dataset's description, and the company's name is the set's key. What comes back is still not trusted:

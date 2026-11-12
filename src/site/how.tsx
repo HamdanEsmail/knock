@@ -79,7 +79,7 @@ export function HowPage({ base, totals }: { base: string; totals: Totals }) {
 
         <h2>Where TinySet comes in</h2>
         <p>
-          A site that is gone, for sale or silent cannot say what happened to the company. Those rows go to TinySet, {SET_ROWS} to a set. TinySet finds its own rows, so the list is written into the
+          A site that is gone or silent cannot say what happened to the company, and an address that now leads elsewhere cannot say why. Those rows go to TinySet, {SET_ROWS} to a set. TinySet finds its own rows, so the list is written into the
           dataset's description and the company's name is the set's key. That is what made it keep to a list when I tested it.
         </p>
         <ul>
