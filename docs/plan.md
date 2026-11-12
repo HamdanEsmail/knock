@@ -158,6 +158,15 @@ Nothing in this slice can spend. At its end: a deploy with the cap at 0, 20 real
 
 Deploy with the cap at 0 (my own yes first). Then, in this order: 20 rows; read the Workflow runs for processing time and request counts; stop a run in the middle and carry on; all 590. What I measure sets the sizes left open in the design.
 
+#### What the first live run showed (12 November 2026, cap at 0)
+
+- The same 46 rows as the sample above, handed in to the live site: every row had a verdict after 16 minutes, in 9 Workflow runs and 199 steps. No step needed its second try, no run failed, and the most calls any one run made to other hosts was 18, against the 50 the free plan allows. Cloudflare's record gives each step's time and tries but not a count of database queries, so what I can say there is that no run was stopped for passing a limit.
+- The search pace held: 99 searches over 17 minutes, never more than 7 in one minute, and TinyFish's own record for the same window shows 99.
+- A second list of ten rows, whose run I stopped by hand in the middle of its searches: "Carry on" refused until the list had stood still for ten minutes, then started it again where it stopped, and it finished with a verdict on every row. A second press was refused.
+- 42 of the 46 verdicts were the same as on my machine two hours earlier. The four that differ (Bright, Open Motors, PartnerStack, Meter Feeder) differ because Search listed different pages the second time, not because anything broke. A verdict that rests on one search can change from one day to the next; that goes with the rules to tune after the 590.
+- TinyFish recorded 142 pages for the two lists and Knock had counted 126: the other 16 were pages TinyFish tried and could not read. Knock now counts those too, so the day's allowance and the spend line cannot read low.
+- The wallet did not move during the run.
+
 ## Slice 2: TinySet
 
 ### Task 12: sets
