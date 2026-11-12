@@ -168,6 +168,22 @@ Deploy with the cap at 0 (my own yes first). Then, in this order: 20 rows; read 
 - The database read 16,884 rows and wrote 952 for these 56 rows, my own checks included. The free plan allows 5 million rows read and 100,000 written a day.
 - The wallet did not move during the run.
 
+#### What the 590 showed (12 November 2026, cap at 2)
+
+- All 590 rows of Y Combinator's 2014 to 2016 batches had a verdict after 2 hours 57 minutes: 86 Workflow runs, 2,301 steps, 1,329 calls to TinyFish, no step tried twice, no run failed. 1,142 searches, never more than 7 in a minute; 1,444 pages by Knock's count.
+- It cost nothing. TinyFish recorded 1,268 pages read on the account that day, 268 past its free thousand, and the wallet did not move. Knock had booked those pages at $0.001 each as it read them ($0.64); I took that out of the books when the wallet showed it was never charged. Searches were not charged either.
+- Free signs only, against Y Combinator's own record, which Knock never saw:
+
+| The record says | Alive | Slowing down | Zombie | Could not tell |
+|---|---|---|---|---|
+| Running (244) | 185 | 18 | 17 | 24 |
+| Bought (162) | 47 | 17 | 60 | 38 |
+| Gone (184) | 9 | 6 | 73 | 96 |
+
+- The zombies that the record says are running, by the rule that decided: for sale 0 of 16, address gone 4 of 53, forwards to a site that does not name it 4 of 23, newest date over three years 6 of 24, nearly empty 3 of 34. The date rule is the weakest: the index does not know every new page.
+- Of the 158 "could not tell", 58 had no address at all and 76 answered with an error, blocked the reader or did not answer. Those are rows only an outside source can decide.
+- A fault the run showed, fixed the same day: every save walked all the rows of its list, and every page view counted every row in the database. The database read 2.2 million rows that day, 44% of what the free plan allows all of my projects together. A save now goes straight to its rows and the totals are read from the lists' walls.
+
 ## Slice 2: TinySet
 
 ### Task 12: sets
@@ -189,6 +205,16 @@ Deploy with the cap at 0 (my own yes first). Then, in this order: 20 rows; read 
 ### Task 14: the gate
 
 Deploy with the cap at 20 (my own yes first). Fifty rows mixed on purpose through `POST /api/admin/lists/:id/wave`. It passes with at least 35 usable rows and none from outside the list. Upstream's traces run first, and I check Upstream's "charged" mark after each wave.
+
+#### What the gate showed (12 November 2026, cap at 20)
+
+- Fifty rows chosen from the finished 590 without looking at the record: 12 that forward elsewhere, 8 with no address, 8 whose address is gone, 8 that gave an error or blocked the reader, 6 nearly empty, 8 that answer and show nothing new.
+- First a set of two rows, to prove every step on the real platform: made, filled once, read back, sources read, decided, booked at $0.10, which is what the wallet fell by.
+- Then the other 48. All 48 came back under their own names and sites after one refill; none from outside the list. Booked at $2.70, again exactly the wallet's fall. Fifty rows cost $2.80, not the $5 of the rate card.
+- **Pass:** 41 of 50 usable (a source Knock read itself, which names the company, not on Y Combinator's site); the bar was 35. No link was on Y Combinator's site.
+- 30 verdicts now rest on what TinySet found. Of the 50, 18 changed: 12 from "could not tell" to zombie, 2 from "could not tell" to slowing down, 2 from slowing down to zombie, 1 from slowing down to alive, 1 from zombie to slowing down. Among the rows the record calls gone, "could not tell" fell from 6 to 2; among the bought, from 8 to none.
+- What it did not fix: two running companies stay zombie because TinySet said "operates" without a link Knock could read (Assembly, Pave), and one because its latest activity is from 2020 (Emailio). A claim without a readable source decides nothing, by design.
+- Knock still books the pages it reads beyond its free 800 at $0.001 each, and TinyFish still did not charge them: I settle the books against the wallet after each of my own runs.
 
 ## Slice 3: the board
 
