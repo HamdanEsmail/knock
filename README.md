@@ -124,7 +124,7 @@ Refusals are plain: `400 empty_sheet`, `400 header_only`, `400 bad_column`, `400
 ## Limits and cost
 
 - A sheet may hold 1,000 rows. Visitors together may hand in three lists a day. One visitor gets ten single doors an hour.
-- Reading pages and searching cost nothing so far. Knock keeps to 800 pages a day and seven searches a minute, and a list that has used the day's pages waits for midnight UTC and carries on by itself.
+- Reading pages and searching cost nothing so far. Knock reads 800 pages a day free and may pay for 6,000 more in all, and it asks Search seven times a minute. A list that has used the day's pages waits for midnight UTC and carries on by itself.
 - TinySet costs money, so only I can start a set. TinyFish's rate card says $0.10 a row; what the wallet lost was three to six cents a row, and nothing for a set whose rows had no website.
 - One setting caps what Knock may ever spend. The spend so far is at the foot of every page.
 - Everything runs on Cloudflare's free plan, which allows one Workflow run 50 requests to other hosts and 50 database queries. A list is therefore carried by many short runs that hand over to one another. The 590 took 86.

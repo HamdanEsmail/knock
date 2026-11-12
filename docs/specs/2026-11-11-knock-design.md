@@ -194,4 +194,6 @@ One cap for the whole build: **$20**, on my second TinyFish account. Prices are 
   - A page on the site the sheet's address now leads to counts without naming the company, once a source that does name it was read. This is how a renamed company is seen (Plate IQ, now Ottimate). Without the source it does not count.
   - The day a company that still runs was renamed or bought, read from a source that names it, is a dated sign.
   - These were chosen after I had seen Y Combinator's record of the same rows, so the score on that list is a score on the list the rules were tuned on.
+- **Money (section 9).** The pages Knock may pay for went from $2 to $6 on 12 November 2026, before judging. The 590 had used 866 of the 2,000 paid pages in one day, and a second long sheet on such a day would have waited for midnight. TinyFish has charged for none of them. The cap of $20 is unchanged, so what is left for sets is the cap, less $6, less what sets were booked at.
+- **Which rows go to TinySet (section 6).** Never an address that is for sale: that sign is the owner's own, and rule 2 decides it.
 - The other decisions made in the build are listed in `docs/plan.md`, under "Decisions the design left to the build".

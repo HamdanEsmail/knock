@@ -273,6 +273,12 @@ Deploy with the cap at 20 (my own yes first). Fifty rows mixed on purpose throug
 - What it costs: "Shape (ShapeScale)" is now named by any page that uses the word "shape", as a row called "Shape" always was. A company whose name is an everyday word is named by any page that uses the word; "What it cannot tell" says so.
 - What it does not do: the eight rows of the 590 keep the signs they were read with, and Kenota's row still says "TinySet returned nothing". The change is for lists checked from now on. The saved signs of all 590 rows still give back the live list, 0 different.
 
+#### Before the judges: the page allowance, and one wrong sentence (12 November 2026)
+
+- A five-row sheet handed in on the live site the way a visitor does (a CSV file through the first page's form, no admin token): every row decided in 129 seconds, the sheet back with its own three columns untouched and Knock's thirteen after them. "Luciq (formerly Instabug)" at its old address came out "forwards to luciq.ai, which names it", alive: the name fix, working on the live site.
+- The pages Knock may pay for were 2,000 in all, and the day of the 590 had used 866 of them. A sheet of 500 rows needs about 1,200 pages, 800 of them free. With two such sheets on one day the second would have waited for midnight, and "Knock on one door" would have been refused for everyone until then. The allowance is now $6, which is 6,000 pages. TinyFish has charged for none of these pages so far.
+- "How it works" and the README said that addresses for sale go to TinySet. They never did: the order rows are picked in has no such step, and all 16 for-sale rows of the 590 were never sent. Both say so now.
+
 ## Slice 3: the board
 
 - **Task 15.** The pages in the look I chose: the wall, the departure board, a row's page, the working state.

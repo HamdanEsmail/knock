@@ -115,3 +115,11 @@ My first version of the fix was too loose, and a review caught it before any dep
 What the set showed otherwise: 49 of 50 back, $1.60 where the rate card says $5, and 16 companies that were zombie on an empty page or a dead address are now zombie on a shutdown or a purchase with a source. For a dead company TinySet often says "no longer operates" and gives nothing to read: 18 rows came back with no link at all. Those rows keep the verdict the free signs gave them.
 
 Five sets, 200 rows, $7.30. The wallet lost exactly that.
+
+## 12 November: before the judges
+
+Three last things, each found by checking what I was about to hand in.
+
+- I handed a small sheet in on the live site the way a stranger would, as a file through the form. It came back right, and a company written with its old name in brackets, at its old address, was recognised on the site that address now leads to.
+- The pages Knock may pay for were 2,000 in all, and one day's work on the 590 had used 866 of them. Two long sheets from judges on the same day would have left the second one waiting until midnight. The allowance is now 6,000 pages. Nothing has been charged for any of them.
+- My own "How it works" page said that addresses for sale go to TinySet. They never did. I had written the sentence from memory of the design and not from the code that picks the rows.

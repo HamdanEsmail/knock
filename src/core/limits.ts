@@ -54,9 +54,13 @@ export const DOOR_KNOCKS = 2;
  * day on the account, and I use the same account for other things, so Knock keeps to 800.
  */
 export const FREE_READS_PER_DAY = 800;
-/** What a page costs beyond the free ones, and the most Knock may spend on them in all. */
+/**
+ * What a page costs beyond the free ones, and the most Knock may spend on them in all. Six
+ * dollars is 6,000 pages: room for several long sheets from visitors, also on the same day.
+ * It was two dollars until the 590 had used 866 of those 2,000 pages in one day.
+ */
 export const READ_USD = 0.001;
-export const READS_USD_MAX = 2;
+export const READS_USD_MAX = 6;
 
 /**
  * TinyFish Search is free up to 30 requests a minute and 12,000 a day on the account, and its

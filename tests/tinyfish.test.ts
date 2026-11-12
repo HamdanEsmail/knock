@@ -106,10 +106,10 @@ describe("the reading allowance", () => {
     expect((await readItems(env, pages)).read).toBe(2);
   });
 
-  it("adds 2,000 paid pages in all once a cap is set, and counts the ones already used on other days", async () => {
+  it("adds 6,000 paid pages in all once a cap is set, and counts the ones already used on other days", async () => {
     const paying = { ...env, SPEND_CAP_USD: "20" };
     await env.DB.prepare("INSERT INTO limits (day, name, count) VALUES ('2026-11-01', 'reads', 1100), (?, 'reads', 795)").bind(today()).run();
-    expect(await readsLeft(paying, today())).toBe(5 + 2000 - 300);
+    expect(await readsLeft(paying, today())).toBe(5 + 6000 - 300);
     expect(await readsLeft(env, today())).toBe(5);
   });
 });

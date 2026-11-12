@@ -350,19 +350,19 @@ describe("a fill is never paid for twice", () => {
 });
 
 describe("what a wave may cost", () => {
-  it("starts nothing while the cap leaves no room beyond the two dollars kept for pages", async () => {
+  it("starts nothing while the cap leaves no room beyond the six dollars kept for pages", async () => {
     const id = await doneList(THREE);
     expect(await start(env)(id)).toMatchObject({ ok: false, status: 402, code: "cap" });
-    expect(await start({ ...env, SPEND_CAP_USD: "2" })(id)).toMatchObject({ ok: false, status: 402, code: "cap" });
-    expect(await start({ ...env, SPEND_CAP_USD: "2.2" })(id)).toMatchObject({ ok: false, code: "cap" });
-    expect(await start({ ...env, SPEND_CAP_USD: "2.3" })(id)).toMatchObject({ ok: true });
+    expect(await start({ ...env, SPEND_CAP_USD: "6" })(id)).toMatchObject({ ok: false, status: 402, code: "cap" });
+    expect(await start({ ...env, SPEND_CAP_USD: "6.2" })(id)).toMatchObject({ ok: false, code: "cap" });
+    expect(await start({ ...env, SPEND_CAP_USD: "6.3" })(id)).toMatchObject({ ok: true });
     expect(sent.filter((s) => s.path.startsWith("/datasets")).length).toBe(0);
   });
 
   it("counts what earlier sets cost, and starts no set while another is not in the books", async () => {
     const id = await doneList([...THREE, { name: "Vine", address: "vine.co" }, { name: "Jawbone", address: "jawbone.com" }]);
-    await env.DB.prepare("INSERT INTO spend (at, kind, amount_usd, ref) VALUES ('2026-11-12T00:00:00Z', 'set', 17.6, 'earlier')").run();
-    // 20 less 2 for pages less 17.60 leaves 40 cents: four rows, not five.
+    await env.DB.prepare("INSERT INTO spend (at, kind, amount_usd, ref) VALUES ('2026-11-12T00:00:00Z', 'set', 13.6, 'earlier')").run();
+    // 20 less 6 for pages less 13.60 leaves 40 cents: four rows, not five.
     expect(await start()(id)).toMatchObject({ ok: false, code: "cap" });
     expect(await start()(id, { count: 4 })).toMatchObject({ ok: true });
     queue = [];

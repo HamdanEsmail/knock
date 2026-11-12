@@ -31,7 +31,7 @@ I do not deploy, and I apply no migration, while a list or a set is running. A r
 | Setting | Where | Meaning |
 |---|---|---|
 | `PUBLIC_BASE_URL` | `wrangler.jsonc` vars | The address the links in the API's answers are built from. |
-| `SPEND_CAP_USD` | `wrangler.jsonc` vars | The most Knock may ever spend at TinyFish, in dollars. $2 of it is kept for pages beyond the free ones, and the rest is for TinySet. With `0` Knock reads free pages only and starts no set. |
+| `SPEND_CAP_USD` | `wrangler.jsonc` vars | The most Knock may ever spend at TinyFish, in dollars. $6 of it is kept for pages beyond the free ones (`READS_USD_MAX` in `src/core/limits.ts`), and the rest is for TinySet. With `0` Knock reads free pages only and starts no set. |
 | `TINYFISH_API_KEY` | secret | The account everything runs on. |
 | `ADMIN_TOKEN` | secret | For the admin routes below. A list handed in with it counts as mine and not against the visitors' three a day. |
 
@@ -84,7 +84,7 @@ A set is refused, and nothing is charged, when:
 | `409 list_from_another_day` | The list's pages were read on another UTC day. A set decides its rows again and their sentences say "read today", so the list has to be checked again first. |
 | `409 set_in_flight` | Another set is not in the books yet. One runs at a time, so that each one's cost can be read from the wallet. |
 | `409 nothing_to_send` | No row is left that TinySet could add to. |
-| `402 cap` | The rows at the rate card would pass what the cap leaves for sets: the cap, less $2 for pages, less what sets were booked at. |
+| `402 cap` | The rows at the rate card would pass what the cap leaves for sets: the cap, less $6 for pages, less what sets were booked at. |
 | `402 wallet_low`, `503 wallet_unreadable` | The wallet holds too little, or would not say. |
 | `409 rows_taken`, `503 could_not_start` | Another set took some of the rows meanwhile, or the run could not be started. The rows are free again. |
 
@@ -105,7 +105,7 @@ I run the second line only when the wallet's fall equals the sum of the `set` li
 
 | What I see | What it means | What I do |
 |---|---|---|
-| A list says "Today's pages are read. Knock carries on at midnight UTC." | The day's 800 free pages are used and the cap leaves nothing for more. | Nothing. It wakes by itself. |
+| A list says "Today's pages are read. Knock carries on at midnight UTC." | The day's 800 free pages are used, and so are the 6,000 pages Knock may pay for in all. "Knock on one door" is refused until midnight too. | Nothing: it wakes by itself. To see how many paid pages are used: the `limits` table, name `reads`, every day's count past 800. |
 | A list has not moved for ten minutes and is not waiting | A run died between two hand-overs. | Press "Carry on" on the list's page, or `POST /api/lists/<id>/carry-on`. It starts where the list stopped and repeats nothing whose answer was saved. It refuses while the list is still moving. |
 | A row's door says "could not be asked today" | The call for it failed three times as a whole. | Hand the row in again in a small sheet. |
 | Many doors say "answered with an error", "did not answer in time" or "blocks readers" | Those sites turn TinyFish's reader away. | Put them to TinySet: they are in the order Knock picks. |
