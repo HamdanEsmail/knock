@@ -27,6 +27,8 @@ CREATE TABLE lists (
   created_at TEXT NOT NULL,
   -- The last time a row of this list moved. "Carry on" works only when this is ten minutes old.
   moved_at TEXT NOT NULL,
+  -- When a waiting list takes up its work again. Null unless it waits.
+  wake_at TEXT,
   finished_at TEXT
 );
 CREATE INDEX lists_created ON lists (created_at);
