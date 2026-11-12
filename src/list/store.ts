@@ -263,9 +263,10 @@ const ROW_COLUMNS: [keyof RowPatch, string][] = [
 
 // One statement for any number of rows. Each patch is one entry of a JSON list; a column is
 // changed only where its patch names the field (json_type is NULL for a field that is absent,
-// and 'null' for one that is given as null).
-const ROWS_UPDATE = `UPDATE rows SET ${ROW_COLUMNS.map(([field, column]) => `${column} = CASE WHEN json_type(p.value, '$.${field}') IS NULL THEN rows.${column} ELSE json_extract(p.value, '$.${field}') END`).join(", ")}
-  FROM json_each(?2) AS p WHERE rows.list_id = ?1 AND rows.n = json_extract(p.value, '$.n')`;
+// and 'null' for one that is given as null). The rows are named by their numbers first, so the
+// database goes straight to them: without that it walked every row of the list on every save.
+export const ROWS_UPDATE = `UPDATE rows SET ${ROW_COLUMNS.map(([field, column]) => `${column} = CASE WHEN json_type(p.value, '$.${field}') IS NULL THEN rows.${column} ELSE json_extract(p.value, '$.${field}') END`).join(", ")}
+  FROM json_each(?2) AS p WHERE rows.list_id = ?1 AND rows.n IN (SELECT json_extract(value, '$.n') FROM json_each(?2)) AND rows.n = json_extract(p.value, '$.n')`;
 
 /**
  * Saves what a step learned about its rows: one statement for the rows and one that notes the
@@ -301,24 +302,24 @@ export async function rowsLeft(db: D1Database, listId: string): Promise<{ left: 
 /** `rows` is every row handed in; `decided` is those that have a verdict. */
 export type Totals = { lists: number; rows: number; decided: number; alive: number; slowing_down: number; zombie: number; could_not_tell: number; spend_usd: number };
 
-/** The figures at the foot of every page and at /api/stats. */
+/**
+ * The figures at the foot of every page and at /api/stats. They are read from the lists'
+ * walls, which hold one letter for each row, and not from the rows: a page view then costs
+ * the database one row for each list, however many companies the lists hold.
+ */
 export async function totals(db: D1Database): Promise<Totals> {
-  const [lists, rows, spend] = await db.batch<Record<string, number | string | null>>([
-    db.prepare("SELECT COUNT(*) AS lists FROM lists"),
-    db.prepare("SELECT verdict, COUNT(*) AS n FROM rows GROUP BY verdict"),
-    db.prepare("SELECT COALESCE(SUM(amount_usd), 0) AS usd FROM spend"),
-  ]);
-  const by = new Map((rows?.results ?? []).map((r) => [r.verdict, Number(r.n)]));
-  const of = (verdict: string) => by.get(verdict) ?? 0;
-  const rowsInAll = [...by.values()].reduce((a, b) => a + b, 0);
+  const [lists, spend] = await db.batch<Record<string, number | string | null>>([db.prepare("SELECT wall FROM lists"), db.prepare("SELECT COALESCE(SUM(amount_usd), 0) AS usd FROM spend")]);
+  const walls = (lists?.results ?? []).map((l) => String(l.wall ?? ""));
+  const of = (letter: string): number => walls.reduce((sum, wall) => sum + wall.split(letter).length - 1, 0);
+  const rows = walls.reduce((sum, wall) => sum + wall.length, 0);
   return {
-    lists: Number(lists?.results[0]?.lists ?? 0),
-    rows: rowsInAll,
-    decided: rowsInAll - (by.get(null) ?? 0),
-    alive: of("alive"),
-    slowing_down: of("slowing down"),
-    zombie: of("zombie"),
-    could_not_tell: of("could not tell"),
+    lists: walls.length,
+    rows,
+    decided: rows - of("."),
+    alive: of("a"),
+    slowing_down: of("s"),
+    zombie: of("z"),
+    could_not_tell: of("u"),
     spend_usd: Math.round(Number(spend?.results[0]?.usd ?? 0) * 100) / 100,
   };
 }

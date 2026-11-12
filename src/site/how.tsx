@@ -90,6 +90,7 @@ export function HowPage({ base, totals }: { base: string; totals: Totals }) {
         <ul>
           <li>
             Reading a page is free at TinyFish up to 1,000 pages a day. Knock keeps to {FREE_READS_PER_DAY.toLocaleString("en-US")}, and may pay ${READ_USD} a page after that, up to ${READS_USD_MAX} in all.
+            It books those pages at that price as it reads them, and I settle the figure against the wallet after each of my own lists, so the spend shown is what was paid.
           </li>
           <li>Search is free. Knock asks at most {SEARCHES_PER_MINUTE} a minute, so a long list takes hours and not minutes.</li>
           <li>TinySet costs ${SET_ROW_USD.toFixed(2)} for each row that comes back.</li>

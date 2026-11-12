@@ -26,7 +26,8 @@
   "vars": {
     "PUBLIC_BASE_URL": "https://knock.hamdanesmail12-7a9.workers.dev",
     // The most Knock may spend in total, in dollars. 0 means nothing paid ever happens.
-    "SPEND_CAP_USD": "2"
+    // Two dollars of it are kept for pages; the rest is what TinySet sets may cost.
+    "SPEND_CAP_USD": "20"
   },
   "assets": {
     "directory": "./public"
