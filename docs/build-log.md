@@ -108,7 +108,9 @@ A last set of fifty: every nearly empty home page that had not been asked about,
 
 By the letter, that line was crossed once. "Kenota" came back for the row I had sent as "Kenota (formerly ExVivo Labs)", and Knock threw it away as a name that is not on the list. No other company came back, but my own check prints FAIL for the set, and it should: the row was lost to a fault of mine that I had already seen once and left.
 
-So I fixed it. A cell with a part in brackets now has two names, and a page names the company by either. From TinySet the name inside the brackets counts only when the site that was sent comes back with it, and a short name that two rows share leads to neither. I broke both guards on purpose and saw their tests fail.
+So I fixed it. A cell with a part in brackets is now found by the name outside them. From TinySet the name inside the brackets counts only when the site that was sent comes back with it, and a short name that two rows share leads to neither. I broke both guards on purpose and saw their tests fail.
+
+My first version of the fix was too loose, and a review caught it before any deploy: it took whatever stood in the brackets as a second name, so a cell like "Foo (London)" would have been named by any page that says "London". The eight real names I had tested with all held true second names, so they could not show it. Now the part in brackets counts on a page only when a word such as "formerly" leads it in, or when it carries the first name inside it.
 
 What the set showed otherwise: 49 of 50 back, $1.60 where the rate card says $5, and 16 companies that were zombie on an empty page or a dead address are now zombie on a shutdown or a purchase with a source. For a dead company TinySet often says "no longer operates" and gives nothing to read: 18 rows came back with no link at all. Those rows keep the verdict the free signs gave them.
 

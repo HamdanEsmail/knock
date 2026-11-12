@@ -96,7 +96,7 @@ TinySet is built to find its own rows, so I had to make it keep to mine. The lis
 - A row under a name that is not on the list, or on another website than the one sent, is thrown away.
 - Every source link is read by Knock itself, and counts only when the page could be read and names the company.
 - A renamed company's new site does not carry its old name. A new page there counts once a source that names the old name was read, and not before, because an address that someone else took over would look the same.
-- A cell that holds two names, as "Kenota (formerly ExVivo Labs)", is matched by the name outside the brackets. The name inside them counts only when the site that was sent comes back with it.
+- A cell that holds two names, as "Kenota (formerly ExVivo Labs)", is matched by the name outside the brackets. The name inside them counts only when the site that was sent comes back with it. On a page it counts only when a word such as "formerly" leads it in, because a part in brackets is often no name at all: "(London)", "(acquired)".
 - A set's fill is asked for once, in a step that is never tried a second time.
 
 ## What it cannot tell
@@ -141,7 +141,7 @@ npm run dev
 ```
 
 ```bash
-npm run check       # type check, 253 tests, and a dry-run deploy
+npm run check       # type check, 255 tests, and a dry-run deploy
 ```
 
 The tests never touch the network: TinyFish and Google are replaced by stand-ins that fail on any call they were not told about. To deploy, and to put rows to TinySet, see [docs/runbook.md](docs/runbook.md).

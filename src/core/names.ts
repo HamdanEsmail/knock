@@ -34,23 +34,38 @@ const TELLING = 4;
  * them, is its own `main`.
  */
 export function nameParts(name: string): { main: string; alias: string | null } {
+  const { main, alias } = parts(name);
+  return { main, alias };
+}
+
+/** `led` says that a word such as "formerly" led the part in brackets in. */
+function parts(name: string): { main: string; alias: string | null; led: boolean } {
   const whole = name.trim();
   const inside = [...whole.matchAll(BRACKETED)].map((m) => (m[1] ?? "").trim()).filter((s) => s !== "");
   const outside = whole.replace(BRACKETED, " ").replace(/\s+/g, " ").trim();
-  if (inside.length === 0 || words(outside).length === 0) return { main: whole, alias: null };
+  if (inside.length === 0 || words(outside).length === 0) return { main: whole, alias: null, led: false };
   let alias = inside[0]!;
-  while (LEAD.test(alias)) alias = alias.replace(LEAD, "").trim();
-  return { main: outside, alias: alias === "" ? null : alias };
+  let led = false;
+  while (LEAD.test(alias)) {
+    alias = alias.replace(LEAD, "").trim();
+    led = true;
+  }
+  return { main: outside, alias: alias === "" ? null : alias, led };
 }
 
-/** The names a company may go by on a page: the whole cell, the name outside the brackets, and a second name that says enough. */
+/**
+ * The names a company may go by on a page or in a host: the whole cell, and the name outside
+ * the brackets. The part in brackets is often no name at all, as in "Foo (London)" or
+ * "Foo (acquired)", so it counts only when a word such as "formerly" led it in, or when it
+ * carries the first name inside it, as "ShapeScale" carries "Shape".
+ */
 function forms(name: string): string[] {
-  const { main, alias } = nameParts(name);
-  const all = [name];
-  if (alias !== null) {
-    all.push(main);
-    if (nameKey(alias).length >= TELLING) all.push(alias);
-  }
+  const { main, alias, led } = parts(name);
+  if (alias === null) return [name];
+  const all = [name, main];
+  const key = nameKey(alias);
+  const first = nameKey(main);
+  if (key.length >= TELLING && (led || (first.length >= TELLING && key.includes(first)))) all.push(alias);
   return all;
 }
 

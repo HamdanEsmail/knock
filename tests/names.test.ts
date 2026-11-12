@@ -37,16 +37,18 @@ describe("a company's name", () => {
 });
 
 describe("a name with a part in brackets", () => {
-  // The eight such names among the 590 of the example list, each with its two parts.
-  const REAL: [string, string, string][] = [
-    ["Shape (ShapeScale)", "Shape", "ShapeScale"],
-    ["Flirtey (SkyDrop)", "Flirtey", "SkyDrop"],
-    ["VINEBOX (Usual Beverage Co.)", "VINEBOX", "Usual Beverage Co."],
-    ["Luciq (formerly Instabug)", "Luciq", "Instabug"],
-    ["Sanitation and Health Rights in India (SHRI)", "Sanitation and Health Rights in India", "SHRI"],
-    ["NuCypher (aka Threshold Network)", "NuCypher", "Threshold Network"],
-    ["Kenota (formerly ExVivo Labs)", "Kenota", "ExVivo Labs"],
-    ["UtilityScore (formerly Pando)", "UtilityScore", "Pando"],
+  // The eight such names among the 590 of the example list, each with its two parts, and
+  // whether the part in brackets is a name a page may go by: a word leads it in, or it
+  // carries the first name inside it.
+  const REAL: [string, string, string, boolean][] = [
+    ["Shape (ShapeScale)", "Shape", "ShapeScale", true],
+    ["Flirtey (SkyDrop)", "Flirtey", "SkyDrop", false],
+    ["VINEBOX (Usual Beverage Co.)", "VINEBOX", "Usual Beverage Co.", false],
+    ["Luciq (formerly Instabug)", "Luciq", "Instabug", true],
+    ["Sanitation and Health Rights in India (SHRI)", "Sanitation and Health Rights in India", "SHRI", false],
+    ["NuCypher (aka Threshold Network)", "NuCypher", "Threshold Network", true],
+    ["Kenota (formerly ExVivo Labs)", "Kenota", "ExVivo Labs", true],
+    ["UtilityScore (formerly Pando)", "UtilityScore", "Pando", true],
   ];
 
   it("has the name outside the brackets and the other name inside them, without the word that leads it in", () => {
@@ -58,10 +60,10 @@ describe("a name with a part in brackets", () => {
     expect(nameParts("(Acme)")).toEqual({ main: "(Acme)", alias: null });
   });
 
-  it("is named by a text that carries either part", () => {
-    for (const [name, main, alias] of REAL) {
+  it("is named by a text that carries the name outside the brackets, and by the one inside them when that is a name", () => {
+    for (const [name, main, alias, aliasNames] of REAL) {
       expect(namesCompany(`Welcome to ${main}, where things are made.`, name), `${name} by ${main}`).toBe(true);
-      expect(namesCompany(`The team behind ${alias} wrote this.`, name), `${name} by ${alias}`).toBe(true);
+      expect(namesCompany(`The team behind ${alias} wrote this.`, name), `${name} by ${alias}`).toBe(aliasNames);
       expect(namesCompany("A page about something else entirely.", name), name).toBe(false);
     }
     // The page that showed the fault: the company's own site, which says only the short name.
@@ -72,6 +74,25 @@ describe("a name with a part in brackets", () => {
     expect(namesCompany("Reshape your routine", "Shape (ShapeScale)")).toBe(false);
     expect(namesCompany("We ship to the UK and beyond", "Acme (UK) Ltd")).toBe(false);
     expect(namesCompany("Acme builds anvils", "Acme (UK) Ltd")).toBe(true);
+  });
+
+  it("is not named by a part in brackets that is no name: a place, a state, a batch, a kind of company", () => {
+    // A sheet's cell often carries a note in brackets. A page that holds the note says nothing about the company.
+    expect(namesCompany("Our offices are in London and Paris", "Foo (London)")).toBe(false);
+    expect(namesCompany("The startup was acquired in 2019", "Foo (acquired)")).toBe(false);
+    expect(namesCompany("Companies of the YC W15 batch", "Foo (YC W15)")).toBe(false);
+    expect(namesCompany("A GmbH is a German kind of company", "Foo (GmbH)")).toBe(false);
+    expect(hostNames("london.gov.uk", "Foo (London)")).toBe(false);
+    expect(hostNames("acquired.fm", "Foo (acquired)")).toBe(false);
+    expect(hostNames("skydrop.com", "Flirtey (SkyDrop)")).toBe(false);
+    // The name outside the brackets still names it.
+    expect(namesCompany("Foo builds anvils in London", "Foo (London)")).toBe(true);
+    expect(namesCompany("Foo was acquired in 2019", "Foo (acquired)")).toBe(true);
+  });
+
+  it("is named by the part in brackets when that part carries the first name inside it", () => {
+    expect(namesCompany("ShapeScale: a 3D body scanner for the home", "Shape (ShapeScale)")).toBe(true);
+    expect(hostNames("shapescale.com", "Shape (ShapeScale)")).toBe(true);
   });
 
   it("is named by an everyday word when that word is its name, as a company called Shape would be", () => {

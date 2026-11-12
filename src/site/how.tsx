@@ -85,8 +85,8 @@ export function HowPage({ base, totals }: { base: string; totals: Totals }) {
         <ul>
           <li>A row that comes back under a name that is not on the list, or on another website than the one sent, is thrown away.</li>
           <li>
-            A cell that holds two names, as "Kenota (formerly ExVivo Labs)", is found by either on a page. From TinySet the name inside the brackets counts only when the site that was
-            sent comes back with it.
+            A cell that holds two names, as "Kenota (formerly ExVivo Labs)", is found on a page by the name outside the brackets. The name inside them counts on a page only when a
+            word such as "formerly" leads it in, and from TinySet only when the site that was sent comes back with it.
           </li>
           <li>Every source link is read by Knock itself, and counts only when the page could be read and names the company.</li>
           <li>
