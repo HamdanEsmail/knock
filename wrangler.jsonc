@@ -21,7 +21,7 @@
   "vars": {
     "PUBLIC_BASE_URL": "https://knock.hamdanesmail12-7a9.workers.dev",
     // The most Knock may spend in total, in dollars. 0 means nothing paid ever happens.
-    "SPEND_CAP_USD": "0"
+    "SPEND_CAP_USD": "2"
   },
   "assets": {
     "directory": "./public"
