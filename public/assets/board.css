@@ -587,6 +587,7 @@ a.row:hover,
   list-style: none;
 }
 .counts a {
+  text-decoration: none;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -654,7 +655,8 @@ a.row:hover,
   gap: 18px;
 }
 .verdict h1 {
-  font-size: var(--step-head);
+  font-size: var(--step-figure);
+  line-height: 0.95;
 }
 .verdict .block {
   align-self: flex-start;
@@ -769,38 +771,16 @@ a.row:hover,
 .foot .mark-large {
   grid-column: 1 / -1;
   background: var(--warm);
-  height: 34svh;
-  min-height: 220px;
+  min-height: 34svh;
   display: flex;
   align-items: flex-end;
-  gap: 4px;
-  padding: var(--pad) var(--pad) 0;
+  padding: var(--pad);
+  font: 300 clamp(96px, 13.6vw, 204px) / 0.86 var(--display);
+  letter-spacing: -0.022em;
+  transition: background-color 0.2s var(--ease);
 }
-.mark-large i {
-  display: block;
-  flex: 1;
-  background: var(--out);
-}
-.mark-large i.a {
-  background: var(--lit);
-}
-.mark-large i.s {
-  background: var(--dim);
-}
-.mark-large i.u {
-  background: var(--unsure);
-}
-.mark-large i.h1 {
-  height: 100%;
-}
-.mark-large i.h2 {
-  height: 88%;
-}
-.mark-large i.h3 {
-  height: 76%;
-}
-.mark-large i.h4 {
-  height: 66%;
+.foot .mark-large:hover {
+  background: #d9d6cf;
 }
 .foot .tile {
   grid-column: span 6;
@@ -883,8 +863,28 @@ a.row:hover,
   .first .name h1,
   .first .one > *,
   .first .say,
-  .first .up > * {
+  .first .up > *,
+  .door svg,
+  .verdict > *,
+  .title > *,
+  .status > *,
+  .prose > *,
+  .aside > * {
     animation: arrive 0.7s var(--ease) both;
+  }
+  .verdict > :nth-child(2),
+  .title > :nth-child(2),
+  .aside > :nth-child(2) {
+    animation-delay: 0.08s;
+  }
+  .verdict > :nth-child(3),
+  .aside > :nth-child(3) {
+    animation-delay: 0.16s;
+  }
+  .verdict > :nth-child(4),
+  .status > *,
+  .aside > :nth-child(4) {
+    animation-delay: 0.24s;
   }
   .first .one > * {
     animation-delay: 0.15s;
@@ -1055,10 +1055,7 @@ a.row:hover,
     grid-column: 1 / -1;
   }
   .foot .mark-large {
-    height: 22svh;
-    min-height: 140px;
-  }
-  .mark-large i:nth-child(2n) {
-    display: none;
+    min-height: 22svh;
+    font-size: 22vw;
   }
 }

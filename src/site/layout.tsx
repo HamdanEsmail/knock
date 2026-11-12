@@ -10,30 +10,6 @@ const STYLES = "/assets/board.css?v=1";
 
 export const AUTHOR_URL = "https://github.com/HamdanEsmail";
 
-/** The heights the doors of the foot take, in turn. */
-const HEIGHTS = ["h2", "h1", "h3", "h1", "h4", "h2", "h1", "h3"];
-const DOORS = 24;
-
-/** Every row Knock has decided, drawn as a row of doors in the proportions of their verdicts. */
-function doorsOf(t: Totals): string[] {
-  const kinds: [string, number][] = [
-    ["a", t.alive],
-    ["s", t.slowing_down],
-    ["z", t.zombie],
-    ["u", t.could_not_tell],
-  ];
-  const all = kinds.reduce((sum, [, n]) => sum + n, 0);
-  if (all === 0) return Array.from({ length: DOORS }, () => "");
-  const doors: string[] = [];
-  let seen = 0;
-  for (const [letter, n] of kinds) {
-    seen += n;
-    while (doors.length < Math.round((seen / all) * DOORS)) doors.push(letter);
-  }
-  // Spread them, so the row reads as a street and not as four blocks.
-  return doors.map((_, i) => doors[(i * 7) % DOORS] ?? "");
-}
-
 export function Layout(props: { title: string; description: string; refresh?: number; totals: Totals; children?: Child }) {
   const t = props.totals;
   return (
@@ -56,11 +32,9 @@ export function Layout(props: { title: string; description: string; refresh?: nu
         </a>
         <div id="content">{props.children}</div>
         <footer class="board foot">
-          <div class="mark-large" role="img" aria-label={`${t.decided.toLocaleString("en-US")} doors Knock has decided, drawn in the proportions of their verdicts`}>
-            {doorsOf(t).map((letter, i) => (
-              <i class={`${letter} ${HEIGHTS[i % HEIGHTS.length]}`.trim()}></i>
-            ))}
-          </div>
+          <a class="mark-large" href="/" aria-label="Knock: the first page">
+            <span aria-hidden="true">Knock</span>
+          </a>
           <div class="tile navy">
             <span>
               {t.lists} {t.lists === 1 ? "list" : "lists"} · {t.decided} rows decided · TinyFish spend ${t.spend_usd.toFixed(2)}

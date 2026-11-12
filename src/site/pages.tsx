@@ -280,7 +280,7 @@ export function ListPage({ list, rows, from, verdict, note }: { list: ListRecord
           <p class="tile prose">No rows to show here yet.</p>
         </div>
       ) : (
-        <section class="list whole" aria-label="The rows" data-ui>
+        <section class="list whole" aria-label="The rows">
           {shown.map((row) => (
             <Band listId={list.id} row={row} />
           ))}
