@@ -43,6 +43,23 @@
 - **A date from Search alone.** A page Search lists but that could not be read today still gives the row its "last seen", named "date from search", and the row's sentence says the page could not be read. It never decides a verdict.
 - **One key.** Knock uses my second TinyFish account for everything.
 
+## What 46 real rows showed (12 November, on my machine, free calls only)
+
+Before any deploy I ran a sample from the earlier probe through the whole pipeline in the local runtime: 11 companies Y Combinator lists as inactive whose home page still loads, 18 it lists as bought, 17 it lists as running. All 46 got a verdict, across two groups of rows, and no step failed.
+
+| Y Combinator's record | alive | slowing down | zombie | could not tell |
+|---|---|---|---|---|
+| Inactive (11) | 1 | 3 | 5 | 2 |
+| Bought (18) | 7 | 4 | 7 | 0 |
+| Running (17) | 12 | 4 | 0 | 1 |
+
+What I take from it, to settle on the full list where the verdicts can be decided again from the stored signs without asking anything twice:
+
+- **The page's own date is the day it was first published.** A running company's product page said January 2024 while Search dated it this month, and the row came out "slowing down". The same rule rightly caught two dead sites whose old pages had been crawled again. What separates them in this sample is how many dated pages Search lists in the window: ten for the running company, one for each dead site.
+- **A date from Search alone carries most "alive" verdicts**: 8 of the 12 running rows. It also made the one inactive row alive, on a privacy page. Legal pages are often the newest page Search lists.
+- **A dead company whose site still loads is mostly not caught by the free signs**: 5 of 11 came out zombie. This is what TinySet is for.
+- A page that was read but led to another site is reported as "could not be read today". The wording is wrong; the verdict is not.
+
 ## Things most likely to bite a visitor, each pinned by a test
 
 1. A CSV saved by Excel: a byte-order mark, CRLF line ends, semicolons or tabs between cells.
