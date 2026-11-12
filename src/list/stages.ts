@@ -240,8 +240,9 @@ export function readBroke(call: Reading[]): { results: ReadResult[]; read: numbe
 }
 
 /**
- * Lays what was read over the rows' lists of pages. When the newest page's own date falls
- * outside the window Search found it in, the next page Search listed is read as well.
+ * Lays what was read over the rows' lists of pages. The next page Search listed is read as
+ * well when the newest one cannot stand for the site: it could not be read, it led to another
+ * site, or its own date falls outside the window Search found it in.
  */
 export function afterReads(rows: RowState[], results: ReadResult[], today: string): RowPatch[] {
   const touched = new Set(results.map((r) => r.n));
@@ -250,8 +251,9 @@ export function afterReads(rows: RowState[], results: ReadResult[], today: strin
     const reads = row.reads.map((it) => results.find((r) => r.n === row.n && r.kind === it.kind)?.item ?? it);
     const hit = reads.find((it) => it.kind === "hit");
     const second = row.pages?.second;
-    if (hit?.done && hit.ok && hit.pageDate !== null && second && row.pages?.found && windowOf(hit.pageDate, today) !== row.pages.found && !reads.some((it) => it.kind === "hit2")) {
-      reads.splice(reads.indexOf(hit) + 1, 0, item("hit2", second.url));
+    if (hit?.done && second && row.pages?.found && !reads.some((it) => it.kind === "hit2")) {
+      const unusable = !hit.ok || !sameSite(hit.finalUrl ?? hit.url, hit.url) || (hit.pageDate !== null && windowOf(hit.pageDate, today) !== row.pages.found);
+      if (unusable) reads.splice(reads.indexOf(hit) + 1, 0, item("hit2", second.url));
     }
     return [{ n: row.n, reads }];
   });

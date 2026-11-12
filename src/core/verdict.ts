@@ -121,7 +121,10 @@ export function decide(s: Signs, today: string): Decision {
   }
   if (operates === true) return answer("slowing down", 6, `A source read today says it still operates${outcome ? ` (${outcome})` : ""}, but nothing dated was found.${aside}`, source?.finalUrl ?? source?.url ?? activity?.finalUrl ?? activity?.url ?? null);
   // 8. The page is nearly empty and nothing else was found.
-  if (kind === "nearly_empty") return answer("zombie", 8, "The home page is nearly empty and nothing else was found.", doorLink ?? door?.asked ?? null);
+  const unread = listed ? ` Search lists a page dated ${showDay(listed.date)}, which could not be read today.` : "";
+  if (kind === "nearly_empty") {
+    return answer("zombie", 8, listed ? `The home page is nearly empty, and nothing else on the site could be read.${unread}` : "The home page is nearly empty and nothing else was found.", doorLink ?? door?.asked ?? null);
+  }
 
   // 9. Everything else, with the reason.
   const reason =
@@ -145,6 +148,5 @@ export function decide(s: Signs, today: string): Decision {
                   ? `The address now leads to ${door.toHost}, which names it, but nothing dated was found there.`
                   : "Nothing Knock found decides it.";
   const search = s.pages?.failed ? " Search could not be asked." : "";
-  const unread = listed ? ` Search lists a page dated ${showDay(listed.date)}, which could not be read today.` : "";
   return answer("could not tell", 9, `${reason}${search}${unread}`, doorLink);
 }

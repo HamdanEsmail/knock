@@ -387,6 +387,43 @@ describe("a second knock", () => {
   });
 });
 
+describe("a newest page that cannot be used", () => {
+  it("reads the next page when the newest one leads off the company's site", async () => {
+    pages.set("https://bigco.com/", {});
+    hits.set("bigco.com", {
+      "12": [
+        { url: "https://bigco.com/system-status/", title: "Status", date: "2026-11-12" },
+        { url: "https://bigco.com/blog/launch", title: "Launch", date: "2026-06-01" },
+      ],
+    });
+    pages.set("https://bigco.com/system-status/", { final_url: "https://www.bigcostatus.com/", published_date: "2026-11-12T00:00:00Z" });
+    pages.set("https://bigco.com/blog/launch", { published_date: "2026-06-01T00:00:00Z" });
+    const id = await newList("name,url\nBigco,bigco.com\n");
+    await drive(id);
+    const [row] = await all(id);
+    expect(row?.reads?.map((r) => [r.kind, r.ok])).toEqual([["hit", true], ["hit2", true]]);
+    expect(row).toMatchObject({ verdict: "alive", rule: 5, lastSeen: "2026-06-01", lastSeenFrom: "the page's own date" });
+    expect(row?.evidence[0]).toBe("https://bigco.com/blog/launch");
+  });
+
+  it("reads the next page when the newest one could not be read", async () => {
+    pages.set("https://smallco.com/", {});
+    hits.set("smallco.com", {
+      "12": [
+        { url: "https://smallco.com/gone-page", title: "Gone", date: "2026-10-10" },
+        { url: "https://smallco.com/news", title: "News", date: "2026-04-04" },
+      ],
+    });
+    pages.set("https://smallco.com/gone-page", { error: "page_not_found" });
+    pages.set("https://smallco.com/news", {});
+    const id = await newList("name,url\nSmallco,smallco.com\n");
+    await drive(id);
+    const [row] = await all(id);
+    expect(row?.reads?.map((r) => [r.kind, r.ok])).toEqual([["hit", false], ["hit2", true]]);
+    expect(row).toMatchObject({ verdict: "alive", lastSeen: "2026-04-04", lastSeenFrom: "date from search" });
+  });
+});
+
 describe("stopping and carrying on", () => {
   it("carries on where it stopped, only after ten quiet minutes, and an older run stops at once", async () => {
     const id = await newList(sheet(50));

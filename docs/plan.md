@@ -35,7 +35,12 @@
 - **Search windows.** Last 12 months; if nothing, 12 to 36 months; if nothing, any time. Dates arrive as "May 7, 2026": they are parsed strictly, an unknown shape is no date, and a hit on another site is dropped.
 - **The newest hit is read.** When the page states its own date, that date is used and named "the page's own date"; otherwise the index's date is used and named "date from search". When the page's own date falls outside the window, the next hit is read as well.
 - **Reading allowance.** Knock counts the pages it reads successfully. 800 a day are free to it (the account has 1,000, and I use it for other things). Beyond that a list waits for midnight UTC, or, with the cap above 0, reads on at $0.001 a page up to $2.
-- **Search pace.** 25 a minute across all lists, counted in the database.
+- **Search pace.** Seven a minute across all lists, counted in the database. I planned 25. On 12 November TinyFish's price list gave Search as 30 a minute and 500 an hour; seven a minute stays under both with one counter, and the wall keeps moving instead of stopping for most of an hour. Raising it is one number in `limits.ts`.
+- **A leg's database queries.** The free plan allows one run 50. A leg counts what its turns can cost at most and hands over at 40.
+- **One bad address costs one row.** A row whose Fetch call failed as a whole is asked alone the next time. A step that breaks even on its second try counts a try for its rows, and the leg carries on.
+- **The second knock.** After an error it asks the address under the other of http and https. A door that could not be asked in three tries gets one more ask here.
+- **A newest page that cannot be used.** When the newest page Search lists could not be read, or leads to another site, the next one is read. The first ten real rows showed why: a large company's newest listed page forwarded to its status site, and the row came out "slowing down".
+- **A date from Search alone.** A page Search lists but that could not be read today still gives the row its "last seen", named "date from search", and the row's sentence says the page could not be read. It never decides a verdict.
 - **One key.** Knock uses my second TinyFish account for everything.
 
 ## Things most likely to bite a visitor, each pinned by a test

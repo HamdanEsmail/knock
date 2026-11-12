@@ -198,6 +198,13 @@ describe("each rule at its edges", () => {
     expect(decide(signs({ door: door("nearly_empty"), pages: pages(hit("2026-08-01")), reads: [read("hit", "https://acme.com/blog/post")] }), TODAY)).toMatchObject({ verdict: "alive", rule: 5 });
   });
 
+  it("rule 8 does not say nothing else was found when Search lists a page that could not be read", () => {
+    const d = decide(signs({ door: door("nearly_empty"), pages: pages(hit("2026-10-31")), reads: [read("hit", "https://acme.com/blog/post", { ok: false, error: "empty_content", finalUrl: null })] }), TODAY);
+    expect(d).toMatchObject({ verdict: "zombie", rule: 8, lastSeen: "2026-10-31", lastSeenFrom: "date from search" });
+    expect(d.why).toBe("The home page is nearly empty, and nothing else on the site could be read. Search lists a page dated 31 Oct 2026, which could not be read today.");
+    expect(decide(signs({ door: door("nearly_empty") }), TODAY).why).toBe("The home page is nearly empty and nothing else was found.");
+  });
+
   it("rule 9 says why: no address, blocked, could not be asked, nothing to go on", () => {
     expect(decide(signs({ address: null, door: door("no_address", { asked: null }), pages: null }), TODAY)).toMatchObject({ verdict: "could not tell", rule: 9, why: "No address was given, and TinySet was not asked about this row." });
     expect(decide(signs({ address: null, door: door("no_address", { asked: null }), pages: null, outside: outside({ returned: false }) }), TODAY).why).toBe("No address was given, and TinySet returned nothing for this name.");

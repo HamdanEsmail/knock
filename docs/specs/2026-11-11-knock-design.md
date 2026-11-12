@@ -184,3 +184,9 @@ One cap for the whole build: **$20**, on my second TinyFish account. Prices are 
 - The exact size of each kind of leg, after measuring processing time on real pages.
 - Whether sites that load but show nothing new go to TinySet: the gate decides.
 - The film. I will draw sample styles and choose before making it.
+
+## 12. Changed while building
+
+- **Search pace (sections 3, 7 and 9).** Knock asks Search seven times a minute across all lists, not up to 30. On 12 November 2026 TinyFish's price list gave Search as 30 a minute and 500 an hour, and seven a minute stays under both. A list of 590 rows therefore takes hours, not minutes, and its page says what is being done the whole time.
+- **Reading (section 9).** Knock keeps to 800 pages a day of the account's 1,000, because I use the account for other things.
+- The other decisions made in the build are listed in `docs/plan.md`, under "Decisions the design left to the build".
