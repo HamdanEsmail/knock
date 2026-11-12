@@ -3,7 +3,7 @@
 import type { Child } from "hono/jsx";
 import { showDay } from "../core/dates";
 import { BOARD_ROWS, LISTS_PER_DAY, ROWS_MAX } from "../core/limits";
-import { doorWords, linkWords, outsideWords, pagesWords } from "../core/sheet";
+import { doorSentence, linkWords, outsideWords, pagesWords } from "../core/sheet";
 import { countsOf } from "../list/csv-out";
 import type { FullRow, ListRecord, Totals } from "../list/store";
 import { Top } from "./layout";
@@ -354,7 +354,7 @@ function Result({ row, where, outside }: { row: FullRow; where: Child; outside: 
       <dl class="signs">
         <div>
           <dt>The door</dt>
-          <dd>{row.address === null ? "No address was given for this row." : `Its address ${doorWords(row.door)}.`}</dd>
+          <dd>{row.address === null ? "No address was given for this row." : doorSentence(row.door)}</dd>
           {row.address ? (
             <dd>
               <Link href={row.address} />

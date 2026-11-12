@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { KNOCK_HEADER, knockCells } from "../src/core/sheet";
-import type { Decision, Signs } from "../src/core/signs";
+import { doorSentence, KNOCK_HEADER, knockCells } from "../src/core/sheet";
+import type { Decision, DoorSign, Signs } from "../src/core/signs";
 
 const signs: Signs = {
   name: "Acme",
@@ -77,5 +77,28 @@ describe("the columns Knock adds to a sheet", () => {
       "2026-11-12",
     );
     for (const cell of cells) expect(cell).not.toMatch(/^[=+\-@\t\r]/);
+  });
+});
+
+describe("what a row's page says about its door", () => {
+  const door = (over: Partial<DoorSign>): DoorSign => ({ kind: "answers", asked: "https://acme.com/", finalUrl: "https://acme.com/", toHost: null, namesIt: null, title: null, chars: 3000, serverDate: null, jobsLink: null, signupLink: null, error: null, knocks: 1, ...over });
+
+  it("is a whole sentence for every kind of answer", () => {
+    expect(doorSentence(door({}))).toBe("Its address answers.");
+    expect(doorSentence(door({ kind: "forwards", toHost: "other.com", namesIt: true }))).toBe("Its address forwards to other.com, which names it.");
+    expect(doorSentence(door({ kind: "forwards", toHost: "other.com", namesIt: false }))).toBe("Its address forwards to other.com, which does not name it.");
+    expect(doorSentence(door({ kind: "for_sale" }))).toBe("Its address is for sale.");
+    expect(doorSentence(door({ kind: "nearly_empty" }))).toBe("Its address answers, and the home page is nearly empty.");
+    expect(doorSentence(door({ kind: "gone", knocks: 2 }))).toBe("Its address no longer exists (asked twice).");
+    expect(doorSentence(door({ kind: "gone" }))).toBe("Its address no longer exists.");
+    expect(doorSentence(door({ kind: "error", knocks: 2 }))).toBe("Its address answered with an error (asked twice).");
+    expect(doorSentence(door({ kind: "timed_out", knocks: 2 }))).toBe("Its address did not answer in time (asked twice).");
+    expect(doorSentence(door({ kind: "blocked" }))).toBe("Its address blocks readers.");
+    expect(doorSentence(door({ kind: "not_asked" }))).toBe("Its address could not be asked today.");
+  });
+
+  it("says so when there is no address, or when the door has not been knocked on yet", () => {
+    expect(doorSentence(door({ kind: "no_address" }))).toBe("No address was given for this row.");
+    expect(doorSentence(null)).toBe("Its address has not been asked yet.");
   });
 });

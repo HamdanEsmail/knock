@@ -49,6 +49,24 @@ export function doorWords(door: DoorSign | null): string {
   }
 }
 
+/** The door as a row's page says it: a whole sentence, where the sheet's cell holds only the words. */
+export function doorSentence(door: DoorSign | null): string {
+  if (door === null) return "Its address has not been asked yet.";
+  const twice = door.knocks >= 2 ? " (asked twice)" : "";
+  switch (door.kind) {
+    case "no_address":
+      return "No address was given for this row.";
+    case "for_sale":
+      return "Its address is for sale.";
+    case "nearly_empty":
+      return "Its address answers, and the home page is nearly empty.";
+    case "gone":
+      return `Its address no longer exists${twice}.`;
+    default:
+      return `Its address ${doorWords(door)}.`;
+  }
+}
+
 const WINDOW_WORDS = { "12": "in the last 12 months", "36": "12 to 36 months ago", any: "more than 36 months ago" } as const;
 
 export function pagesWords(pages: PagesSign | null, reads: ReadItem[], hasAddress: boolean): string {

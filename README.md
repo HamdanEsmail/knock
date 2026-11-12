@@ -141,7 +141,7 @@ npm run dev
 ```
 
 ```bash
-npm run check       # type check, 255 tests, and a dry-run deploy
+npm run check       # type check, 257 tests, and a dry-run deploy
 ```
 
 The tests never touch the network: TinyFish and Google are replaced by stand-ins that fail on any call they were not told about. To deploy, and to put rows to TinySet, see [docs/runbook.md](docs/runbook.md).
