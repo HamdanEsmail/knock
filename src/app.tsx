@@ -11,6 +11,9 @@ import { countsOf, rowOut, sheetOut } from "./list/csv-out";
 import { FIRST_LEG } from "./list/run";
 import { deleteList, featuredList, getList, listRows, patchList, totals } from "./list/store";
 import { handOver } from "./list/workflow";
+import { setsOf } from "./outside/store";
+import { carryOnSet, startWave, type WaveAsk } from "./outside/wave";
+import { startSetRun } from "./outside/workflow";
 import { Layout } from "./site/layout";
 import { Home, ListPage, NotFound } from "./site/pages";
 import { CARRIED, NOTES } from "./site/words";
@@ -145,6 +148,37 @@ export function createApp() {
     if (!isAdmin(c)) return forbidden(c);
     await deleteList(c.env.DB, c.req.param("id"));
     return c.json({ deleted: c.req.param("id") });
+  });
+
+  // A set of rows put to TinySet. It is the part that costs money, so only I can start it.
+  // With no body it takes the next fifty rows in the order of what TinySet can add; `count`
+  // takes fewer, and `rows` takes exactly the rows named.
+  app.post("/api/admin/lists/:id/wave", async (c) => {
+    if (!isAdmin(c)) return forbidden(c);
+    let body: Record<string, unknown> = {};
+    try {
+      const sent: unknown = await c.req.json();
+      if (typeof sent === "object" && sent !== null) body = sent as Record<string, unknown>;
+    } catch {
+      // no body
+    }
+    const ask: WaveAsk = {};
+    if (Array.isArray(body.rows) && body.rows.every((n) => Number.isInteger(n) && (n as number) >= 0)) ask.rows = body.rows as number[];
+    if (typeof body.count === "number" && Number.isFinite(body.count)) ask.count = body.count;
+    const started = await startWave(c.env, c.req.param("id"), ask, new Date(), (setId) => startSetRun(c.env, setId, 0, 0));
+    if (!started.ok) return c.json({ error: started.code, message: started.message }, started.status as ContentfulStatusCode);
+    return c.json({ set: started.setId, rows: started.rows, cost_at_most_usd: started.costAtMost }, 202);
+  });
+
+  app.get("/api/admin/lists/:id/sets", async (c) => {
+    if (!isAdmin(c)) return forbidden(c);
+    return c.json({ sets: await setsOf(c.env.DB, c.req.param("id")) });
+  });
+
+  app.post("/api/admin/sets/:id/carry-on", async (c) => {
+    if (!isAdmin(c)) return forbidden(c);
+    const state = await carryOnSet(c.env, c.req.param("id"), new Date(), (setId, attempt) => startSetRun(c.env, setId, attempt, 0));
+    return c.json({ state }, state === "not found" ? 404 : 200);
   });
 
   // ---- The pages ----

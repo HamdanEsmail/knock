@@ -58,7 +58,7 @@ async function decide(id: string) {
 beforeEach(async () => {
   runs = [];
   broken = false;
-  for (const table of ["rows", "lists", "limits", "spend"]) await env.DB.prepare(`DELETE FROM ${table}`).run();
+  for (const table of ["rows", "lists", "limits", "spend", "sets"]) await env.DB.prepare(`DELETE FROM ${table}`).run();
 });
 
 describe("handing a sheet in", () => {
@@ -254,6 +254,30 @@ describe("my own routes", () => {
     expect(await (await call(`/api/admin/lists/${id}`, { method: "DELETE", headers: admin })).json()).toEqual({ deleted: id });
     expect(await getList(env.DB, id)).toBeNull();
     expect(await env.DB.prepare("SELECT COUNT(*) AS n FROM rows").first("n")).toBe(0);
+  });
+
+  it("start a set for TinySet only with the admin token, only for a finished list, and only under the cap", async () => {
+    const id = await handIn();
+    expect((await post(`/api/admin/lists/${id}/wave`, {})).status).toBe(403);
+    expect((await call(`/api/admin/lists/${id}/sets`)).status).toBe(403);
+    expect((await call("/api/admin/sets/s123/carry-on", { method: "POST" })).status).toBe(403);
+    const early = await post(`/api/admin/lists/${id}/wave`, {}, admin);
+    expect(early.status).toBe(409);
+    expect(await early.json()).toMatchObject({ error: "list_not_done" });
+    await env.DB.prepare("UPDATE lists SET status = 'done' WHERE id = ?").bind(id).run();
+    // The tests run with the cap at nothing, so no set may start, and no call leaves for TinyFish.
+    const capped = await post(`/api/admin/lists/${id}/wave`, { rows: [0, 1] }, admin);
+    expect(capped.status).toBe(402);
+    expect(await capped.json()).toMatchObject({ error: "cap" });
+    expect(await (await call(`/api/admin/lists/${id}/sets`, { headers: admin })).json()).toEqual({ sets: [] });
+    expect((await call("/api/admin/sets/s123/carry-on", { method: "POST", headers: admin })).status).toBe(404);
+  });
+
+  it("remove a list's sets with the list", async () => {
+    const id = await handIn();
+    await env.DB.prepare("INSERT INTO sets (id, list_id, rows, status, created_at) VALUES ('s1', ?, '[0]', 'booked', '2026-11-12T00:00:00Z')").bind(id).run();
+    await call(`/api/admin/lists/${id}`, { method: "DELETE", headers: admin });
+    expect(await env.DB.prepare("SELECT COUNT(*) AS n FROM sets").first("n")).toBe(0);
   });
 });
 

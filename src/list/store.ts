@@ -145,7 +145,7 @@ export async function raiseAttempt(db: D1Database, id: string, from: number, now
 }
 
 export async function deleteList(db: D1Database, id: string): Promise<void> {
-  await db.batch([db.prepare("DELETE FROM rows WHERE list_id = ?").bind(id), db.prepare("DELETE FROM lists WHERE id = ?").bind(id)]);
+  await db.batch([db.prepare("DELETE FROM rows WHERE list_id = ?").bind(id), db.prepare("DELETE FROM sets WHERE list_id = ?").bind(id), db.prepare("DELETE FROM lists WHERE id = ?").bind(id)]);
 }
 
 // ---- Rows ----

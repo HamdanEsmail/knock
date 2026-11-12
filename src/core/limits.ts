@@ -66,6 +66,21 @@ export const READS_USD_MAX = 2;
 export const SEARCHES_PER_MINUTE = 7;
 export const SEARCHES_PER_DAY = 6000;
 
+// ---- TinySet ----
+
+/** Rows in one set. */
+export const SET_ROWS = 50;
+/** What TinySet charges for a row that comes back. */
+export const SET_ROW_USD = 0.1;
+/** A fill is looked at once a minute: this many times in one leg, and it is stopped after this many looks in all. */
+export const LOOK_EVERY_MS = 60_000;
+export const LOOKS_PER_LEG = 12;
+export const LOOKS_MAX = 40;
+/** A dataset that is still empty after this many looks was never filled. */
+export const EMPTY_LOOKS = 3;
+/** The wallet is read this long after a set's last fill ended, because a charge can reach it late. */
+export const CHARGE_LANDS_MS = 600_000;
+
 /** "Carry on" starts work only when the list has not moved for this long. */
 export const STALLED_MS = 600_000;
 

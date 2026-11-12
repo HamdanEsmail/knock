@@ -176,7 +176,7 @@ export function askBroke(row: RowState): RowPatch {
 
 // ---- Reading ----
 
-const item = (kind: ReadKind, url: string): ReadItem => ({ kind, url, done: false, ok: false, finalUrl: null, title: null, pageDate: null, namesIt: null, error: null, tries: 0 });
+export const item = (kind: ReadKind, url: string): ReadItem => ({ kind, url, done: false, ok: false, finalUrl: null, title: null, pageDate: null, namesIt: null, error: null, tries: 0 });
 
 /**
  * Chooses the pages to read for the rows that have none chosen yet: the newest page Search
@@ -263,7 +263,7 @@ export function afterReads(rows: RowState[], results: ReadResult[], today: strin
 // ---- Asking leave: the day's pages and the minute's searches ----
 
 /** The next midnight UTC, and a few seconds, as a time and as a wait from `now`. */
-function midnightAfter(now: Date): { wakeAt: string; waitMs: number } {
+export function midnightAfter(now: Date): { wakeAt: string; waitMs: number } {
   const wake = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 5);
   return { wakeAt: new Date(wake).toISOString(), waitMs: wake - now.getTime() };
 }

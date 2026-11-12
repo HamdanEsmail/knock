@@ -16,6 +16,11 @@
       "name": "knock-list",
       "binding": "LIST_WORKFLOW",
       "class_name": "ListWorkflow"
+    },
+    {
+      "name": "knock-set",
+      "binding": "SET_WORKFLOW",
+      "class_name": "SetWorkflow"
     }
   ],
   "vars": {
