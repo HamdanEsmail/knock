@@ -47,6 +47,11 @@ export async function startWave(env: Env, listId: string, ask: WaveAsk, now: Dat
   const list = await getList(env.DB, listId);
   if (list === null) return refuse(404, "not_found", "There is no such list.");
   if (list.status !== "done") return refuse(409, "list_not_done", "The list is still being checked. A set starts when every row has its free signs.");
+  // A set's rows are decided again on the day the set runs, and their sentences say "read today".
+  // That is only true of the pages the list read when both happen on the same day.
+  if (list.finishedAt === null || dayNow(new Date(list.finishedAt)) !== dayNow(now)) {
+    return refuse(409, "list_from_another_day", "This list's pages were read on another day. A set would decide its rows again as if they were read today, so the list has to be checked again first.");
+  }
   const books = await setBooks(env.DB);
   if (books.inFlight > 0) return refuse(409, "set_in_flight", "Another set is not in the books yet. One set runs at a time, so that what each one cost can be read from the wallet.");
   const count = Math.min(Math.max(Math.trunc(ask.count ?? SET_ROWS), 1), SET_ROWS);
@@ -171,12 +176,10 @@ export function costOf(before: number | null, after: number | null, rowsSent: nu
 async function book(env: Env, setId: string, now: Date): Promise<void> {
   const set = await getSet(env.DB, setId);
   if (set === null || set.status !== "read") return;
-  let after: number | null;
-  try {
-    after = await readBalance(env);
-  } catch {
-    after = null;
-  }
+  // The wallet is asked a second time before the rows are booked at the rate card.
+  const after = await readBalance(env)
+    .catch(() => readBalance(env))
+    .catch(() => null);
   await bookSet(env.DB, setId, costOf(set.walletBefore, after, set.rows.length), now.toISOString());
 }
 

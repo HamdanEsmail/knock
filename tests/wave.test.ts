@@ -25,6 +25,8 @@ let postMode: "ok" | "answer lost" | "refused";
 let looksToFill: number;
 let wallet: number;
 let walletDown: boolean;
+/** How many more times the wallet fails to answer before it answers again. */
+let walletFails: number;
 let posts: number;
 let cancels: number;
 /** A dataset that never gets ready. */
@@ -41,6 +43,7 @@ function world() {
   looksToFill = 2;
   wallet = 30;
   walletDown = false;
+  walletFails = 0;
   posts = 0;
   cancels = 0;
   stuck = false;
@@ -54,7 +57,7 @@ function world() {
     reply: (req, body) => {
       const path = new URL(req.url).pathname.replace("/v1", "");
       sent.push({ method: req.method, path });
-      if (path === "/wallet") return walletDown ? new Response("{}", { status: 500 }) : Response.json({ available_balance: wallet.toFixed(3), currency: "USD" });
+      if (path === "/wallet") return walletDown || walletFails-- > 0 ? new Response("{}", { status: 500 }) : Response.json({ available_balance: wallet.toFixed(3), currency: "USD" });
       if (path === "/datasets" && req.method === "POST") {
         const b = body as { spec: { description: string }; target_rows: number; populate: boolean };
         if (b.populate !== false) throw new Error("a dataset was made with a fill");
@@ -416,6 +419,23 @@ describe("what a wave may cost", () => {
     wallet -= 5;
     await drive();
     expect((await getSet(env.DB, second.setId))?.bookedUsd).toBe(0.1);
+  });
+
+  it("reads the wallet a second time before it gives up on it", async () => {
+    const id = await doneList(THREE);
+    fills = [[RDIO], []];
+    const started = await start()(id);
+    if (!started.ok) throw new Error(started.code);
+    walletFails = 1;
+    await drive();
+    expect((await getSet(env.DB, started.setId))?.bookedUsd).toBe(0.1);
+  });
+
+  it("starts nothing for a list whose free signs were read on another day", async () => {
+    const id = await doneList(THREE);
+    await env.DB.prepare("UPDATE lists SET finished_at = '2026-11-11T23:59:00.000Z' WHERE id = ?").bind(id).run();
+    expect(await start()(id)).toMatchObject({ ok: false, status: 409, code: "list_from_another_day" });
+    expect(made()).toBe(0);
   });
 
   it("starts with the rows I name, and gives the rows back when the run cannot be started", async () => {

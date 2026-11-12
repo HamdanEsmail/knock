@@ -264,7 +264,7 @@ describe("my own routes", () => {
     const early = await post(`/api/admin/lists/${id}/wave`, {}, admin);
     expect(early.status).toBe(409);
     expect(await early.json()).toMatchObject({ error: "list_not_done" });
-    await env.DB.prepare("UPDATE lists SET status = 'done' WHERE id = ?").bind(id).run();
+    await env.DB.prepare("UPDATE lists SET status = 'done', finished_at = ?2 WHERE id = ?1").bind(id, new Date().toISOString()).run();
     // The tests run with the cap at nothing, so no set may start, and no call leaves for TinyFish.
     const capped = await post(`/api/admin/lists/${id}/wave`, { rows: [0, 1] }, admin);
     expect(capped.status).toBe(402);
