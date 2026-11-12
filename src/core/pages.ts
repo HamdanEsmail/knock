@@ -56,7 +56,7 @@ export function nextWindow(sign: PagesSign): Window | null {
 }
 
 /** The window a day falls in. */
-function windowOf(day: string, today: string): Window {
+export function windowOf(day: string, today: string): Window {
   const months = monthsAgo(day, today);
   return months < ALIVE_MONTHS ? "12" : months < ZOMBIE_MONTHS ? "36" : "any";
 }

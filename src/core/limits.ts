@@ -35,6 +35,13 @@ export const CALLS_AT_ONCE = 4;
  * most this many calls; a step is tried at most twice, so a leg stays under 40.
  */
 export const CALLS_PER_LEG = 18;
+/** How often a step is tried in all. */
+export const STEP_TRIES = 2;
+/**
+ * The free plan also allows one run 50 database queries. A leg counts what its turns may cost
+ * at most and hands over before it would pass this, which leaves room for a step tried twice.
+ */
+export const QUERIES_PER_LEG = 40;
 /** A page is given this long to answer. */
 export const PAGE_TIMEOUT_MS = 30_000;
 /** A call that failed as a whole is tried this many times in all before the row says "could not be asked". */
@@ -51,8 +58,12 @@ export const FREE_READS_PER_DAY = 800;
 export const READ_USD = 0.001;
 export const READS_USD_MAX = 2;
 
-/** TinyFish Search allows 30 a minute and 12,000 a day on the account. Knock keeps under both. */
-export const SEARCHES_PER_MINUTE = 25;
+/**
+ * TinyFish Search is free up to 30 requests a minute and 12,000 a day on the account, and its
+ * price list also gives the allowance as 500 an hour. Seven a minute, across all lists, stays
+ * under all three with one counter, and Knock keeps to half the day's allowance.
+ */
+export const SEARCHES_PER_MINUTE = 7;
 export const SEARCHES_PER_DAY = 6000;
 
 /** "Carry on" starts work only when the list has not moved for this long. */

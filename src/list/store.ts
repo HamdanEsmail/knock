@@ -271,9 +271,10 @@ const ROWS_UPDATE = `UPDATE rows SET ${ROW_COLUMNS.map(([field, column]) => `${c
  * Saves what a step learned about its rows: one statement for the rows and one that notes the
  * list has moved. `more` are statements that belong to the same piece of work, such as the
  * count of pages read; they are sent in the same batch, so they happen together or not at all.
+ * `note` is what the list's page says is being done now; left out, the note stays as it is.
  */
-export async function saveRows(db: D1Database, listId: string, patches: RowPatch[], now: string, more: D1PreparedStatement[] = []): Promise<void> {
-  const statements = [...more, db.prepare("UPDATE lists SET moved_at = ?2 WHERE id = ?1").bind(listId, now)];
+export async function saveRows(db: D1Database, listId: string, patches: RowPatch[], now: string, more: D1PreparedStatement[] = [], note?: string): Promise<void> {
+  const statements = [...more, db.prepare("UPDATE lists SET moved_at = ?2, note = COALESCE(?3, note) WHERE id = ?1").bind(listId, now, note ?? null)];
   if (patches.length > 0) statements.unshift(db.prepare(ROWS_UPDATE).bind(listId, JSON.stringify(patches)));
   await db.batch(statements);
 }
@@ -372,15 +373,70 @@ export function countReads(db: D1Database, day: string, n: number): D1PreparedSt
   return db.prepare("INSERT INTO limits (day, name, count) VALUES (?1, 'reads', ?2) ON CONFLICT (day, name) DO UPDATE SET count = count + ?2").bind(day, n);
 }
 
+const readsSoFar = (db: D1Database, day: string): D1PreparedStatement =>
+  db.prepare("SELECT COALESCE(SUM(CASE WHEN day = ?1 THEN count ELSE 0 END), 0) AS today, COALESCE(SUM(MAX(count - ?2, 0)), 0) AS paid FROM limits WHERE name = 'reads'").bind(day, FREE_READS_PER_DAY);
+
+const leftOf = (env: Env, row: { today: number; paid: number } | null | undefined): number => {
+  const free = Math.max(FREE_READS_PER_DAY - (row?.today ?? 0), 0);
+  const payable = Math.floor(Math.min(READS_USD_MAX, spendCap(env)) / READ_USD);
+  return free + Math.max(payable - (row?.paid ?? 0), 0);
+};
+
 /**
  * How many pages Knock may still read now: what is left of the day's free pages, and, when a
  * cap is set, what is left of the pages it may pay for in all.
  */
 export async function readsLeft(env: Env, day: string): Promise<number> {
-  const row = await env.DB.prepare("SELECT COALESCE(SUM(CASE WHEN day = ?1 THEN count ELSE 0 END), 0) AS today, COALESCE(SUM(MAX(count - ?2, 0)), 0) AS paid FROM limits WHERE name = 'reads'")
-    .bind(day, FREE_READS_PER_DAY)
-    .first<{ today: number; paid: number }>();
-  const free = Math.max(FREE_READS_PER_DAY - (row?.today ?? 0), 0);
-  const payable = Math.floor(Math.min(READS_USD_MAX, spendCap(env)) / READ_USD);
-  return free + Math.max(payable - (row?.paid ?? 0), 0);
+  return leftOf(env, await readsSoFar(env.DB, day).first<{ today: number; paid: number }>());
+}
+
+/** Where a list stands, and how many pages may still be read: what a leg asks before it reads. */
+export async function standing(env: Env, listId: string, day: string): Promise<{ attempt: number | null; status: ListStatus | null; readsLeft: number }> {
+  const [list, reads] = await env.DB.batch<Record<string, number | string>>([env.DB.prepare("SELECT attempt, status FROM lists WHERE id = ?").bind(listId), readsSoFar(env.DB, day)]);
+  const line = list?.results[0];
+  const sums = reads?.results[0];
+  return {
+    attempt: line === undefined ? null : Number(line.attempt),
+    status: line === undefined ? null : line.status === "done" ? "done" : line.status === "waiting" ? "waiting" : "working",
+    readsLeft: leftOf(env, sums === undefined ? null : { today: Number(sums.today), paid: Number(sums.paid) }),
+  };
+}
+
+/**
+ * The statement that books what the pages just counted cost: only those beyond the day's free
+ * ones. It is sent right after `countReads`, in the same batch.
+ */
+export function bookReads(db: D1Database, day: string, n: number, now: string, ref: string): D1PreparedStatement {
+  return db
+    .prepare("INSERT INTO spend (at, kind, amount_usd, ref) SELECT ?1, 'reads', MIN(?2, count - ?3) * ?4, ?5 FROM limits WHERE day = ?6 AND name = 'reads' AND count > ?3")
+    .bind(now, n, FREE_READS_PER_DAY, READ_USD, ref, day);
+}
+
+/**
+ * Takes up to `want` of this minute's searches, and reads where the list stands and how many
+ * searches the day has seen, in one batch. `granted` is how many the minute gave.
+ */
+export async function takeSearches(db: D1Database, listId: string, day: string, minute: string, want: number, perMinute: number): Promise<{ attempt: number | null; status: ListStatus | null; granted: number; dayUsed: number }> {
+  const name = `search:${minute}`;
+  const [list, before, after, used] = await db.batch<Record<string, number | string>>([
+    db.prepare("SELECT attempt, status FROM lists WHERE id = ?").bind(listId),
+    db.prepare("SELECT count FROM limits WHERE day = ?1 AND name = ?2").bind(day, name),
+    db
+      .prepare("INSERT INTO limits (day, name, count) VALUES (?1, ?2, MIN(?3, ?4)) ON CONFLICT (day, name) DO UPDATE SET count = MAX(limits.count, MIN(limits.count + ?3, ?4)) RETURNING count")
+      .bind(day, name, want, perMinute),
+    db.prepare("SELECT count FROM limits WHERE day = ?1 AND name = 'search'").bind(day),
+  ]);
+  const had = Number(before?.results[0]?.count ?? 0);
+  const line = list?.results[0];
+  return {
+    attempt: line === undefined ? null : Number(line.attempt),
+    status: line === undefined ? null : line.status === "done" ? "done" : line.status === "waiting" ? "waiting" : "working",
+    granted: Math.max(Number(after?.results[0]?.count ?? had) - had, 0),
+    dayUsed: Number(used?.results[0]?.count ?? 0),
+  };
+}
+
+/** The statement that counts `n` more searches on `day`. It is sent together with the rows they were asked for. */
+export function countSearches(db: D1Database, day: string, n: number): D1PreparedStatement {
+  return db.prepare("INSERT INTO limits (day, name, count) VALUES (?1, 'search', ?2) ON CONFLICT (day, name) DO UPDATE SET count = count + ?2").bind(day, n);
 }
