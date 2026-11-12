@@ -19,6 +19,13 @@ function wallWords(list: ListRecord): string {
   return `Knock found someone home at ${n(c.alive)}, the lights dimming at ${n(c.slowing_down)}, nobody home at ${n(c.zombie)}, and could not tell at ${n(c.could_not_tell)}.${left}`;
 }
 
+/** Which of the sheet's columns Knock took for the name and the address, so a wrong guess shows at once. */
+function columnsTaken(list: ListRecord): string {
+  const called = (col: number): string => `"${list.header[col] ?? `column ${col + 1}`}"`;
+  const from = list.source === "sheet" ? "From a Google Sheet. " : "";
+  return `${from}Names come from the column ${called(list.nameCol)}${list.addressCol === null ? ", and the sheet has no column of addresses" : `, addresses from ${called(list.addressCol)}`}.`;
+}
+
 export function Home({ note, featured, sample, totals }: { note: string | null; featured: ListRecord | null; sample: FullRow[]; totals: Totals }) {
   const counts = featured ? countsOf(featured.wall) : null;
   return (
@@ -154,6 +161,10 @@ export function Home({ note, featured, sample, totals }: { note: string | null; 
             </label>
           </div>
           <label>
+            Or the link of a Google Sheet that anyone with the link can view
+            <input type="url" name="sheet_url" placeholder="https://docs.google.com/spreadsheets/d/…" autocomplete="off" />
+          </label>
+          <label>
             Or paste the sheet here
             <textarea name="csv" placeholder={"Company,Website\nStripe,stripe.com\nParse,parse.com"}></textarea>
           </label>
@@ -229,6 +240,7 @@ export function ListPage({ list, rows, from, verdict, note }: { list: ListRecord
           <p>
             {n(list.rowCount)} {list.rowCount === 1 ? "company" : "companies"}, one door each. {wallWords(list)}
           </p>
+          <p class="small">{columnsTaken(list)}</p>
         </div>
         <div class={`tile status ${list.status === "done" ? "warm" : "navy"}`}>
           {note ? (

@@ -9,6 +9,7 @@ import { carryOn } from "./list/carry";
 import { createList, type NewList } from "./list/create";
 import { countsOf, rowOut, sheetOut } from "./list/csv-out";
 import { FIRST_LEG } from "./list/run";
+import { readSheetLink } from "./list/sheet-link";
 import { deleteList, featuredList, getList, listRows, patchList, totals, type Totals } from "./list/store";
 import { handOver } from "./list/workflow";
 import { setsOf } from "./outside/store";
@@ -74,6 +75,12 @@ export function createApp() {
         return c.json({ error: "bad_request", message: "Send JSON with the sheet as text in `csv`, or send the CSV itself as text/csv." }, 400);
       }
       input = { csv: body?.csv, title: body?.title, source: body?.source, nameCol: body?.name_col, addressCol: body?.address_col, firstLineIsHeader: body?.first_line_is_header };
+      // A Google Sheet's link stands in for the sheet itself.
+      if (typeof body?.sheet_url === "string" && body.sheet_url.trim() !== "" && typeof body?.csv !== "string") {
+        const sheet = await readSheetLink(body.sheet_url);
+        if (!sheet.ok) return c.json({ error: sheet.code, message: sheet.message }, sheet.status as ContentfulStatusCode);
+        input = { ...input, csv: sheet.csv, source: "sheet" };
+      }
     } else {
       input = { csv: await c.req.text(), title: c.req.query("title") };
     }
@@ -235,8 +242,17 @@ export function createApp() {
     const fields = await c.req.parseBody().catch(() => ({}) as Record<string, unknown>);
     const file = fields.sheet;
     const pasted = typeof fields.csv === "string" ? fields.csv : "";
-    const csv = file instanceof File && file.size > 0 ? await file.text() : pasted;
-    const made = await createList(c.env, { csv, title: fields.title }, "visitor", new Date(), start(c));
+    let csv = file instanceof File && file.size > 0 ? await file.text() : pasted;
+    let source = "csv";
+    // With no file and nothing pasted, a Google Sheet's link is read.
+    const link = typeof fields.sheet_url === "string" ? fields.sheet_url.trim() : "";
+    if (csv.trim() === "" && link !== "") {
+      const sheet = await readSheetLink(link);
+      if (!sheet.ok) return c.redirect(`/?note=${sheet.code}#take`, 303);
+      csv = sheet.csv;
+      source = "sheet";
+    }
+    const made = await createList(c.env, { csv, title: fields.title, source }, "visitor", new Date(), start(c));
     return c.redirect(made.ok ? `/l/${made.id}` : `/?note=${made.code}#take`, 303);
   });
 
