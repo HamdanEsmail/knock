@@ -216,6 +216,23 @@ Deploy with the cap at 20 (my own yes first). Fifty rows mixed on purpose throug
 - What it did not fix: two running companies stay zombie because TinySet said "operates" without a link Knock could read (Assembly, Pave), and one because its latest activity is from 2020 (Emailio). A claim without a readable source decides nothing, by design.
 - Knock still books the pages it reads beyond its free 800 at $0.001 each, and TinyFish still did not charge them: I settle the books against the wallet after each of my own runs.
 
+#### Two more sets on the same day (12 November 2026)
+
+- **The 50 rows with no address.** 47 came back after one refill, 3 never did, none from outside the list. 30 are usable; 17 came back with a claim and no source Knock could read, and stay "could not tell". TinyFish charged nothing for this set: the wallet had not moved ten minutes after it ended, nor seventeen minutes after, so it is booked at $0. Every row of it has an empty website, which may be why; I do not know the rule.
+- **Fifty mixed rows:** 17 doors that forward to a site that does not name the company, 15 whose newest date is over three years old, 17 that blocked the reader or did not answer, 1 error. All 50 came back, none from outside the list, 36 usable. Booked at $2.90, the wallet's fall.
+- **The books:** four sets, 150 rows, $5.70 in all, which is what the wallet lost that day (34.982 to 29.282). About four cents a row, against the ten of the rate card.
+- **The list after it,** against the record:
+
+| The record says | Alive | Slowing down | Zombie | Could not tell |
+|---|---|---|---|---|
+| Running (244) | 186 | 22 | 17 | 19 |
+| Bought (162) | 47 | 16 | 79 | 20 |
+| Gone (184) | 9 | 6 | 108 | 61 |
+
+- "Could not tell" fell from 158 rows to 100, and the gone companies Knock calls zombie rose from 73 to 108. 79 verdicts now rest on TinySet's finding with a source Knock read.
+- **What it showed about the rules.** Seventeen running companies are still zombie. Three of them are zombie because TinySet found a shutdown or a merger with a source (Cleanly, DemocracyOS, Flirtey): there the record may be the one that is out of date. Eight were asked and TinySet said "operates", but with no link Knock could read or only an old one (Fountain, Assembly, Stealth Worker, Emailio, MagicBus, Protonet, Pave, BuildScience). Six were not asked. Fountain is the plain mistake: its own pages carry only an old date, TinySet says it operates, and the link it gave could not be read. A claim that cannot be read decides nothing, but it should make Knock say "could not tell" and not "zombie". That is the rule to change.
+- A renamed company is not caught as alive: TinySet said Plate IQ is now Ottimate and gave a page of ottimate.com, which does not name Plate IQ, so the link did not count.
+
 ## Slice 3: the board
 
 - **Task 15.** The pages in the look I chose: the wall, the departure board, a row's page, the working state.
