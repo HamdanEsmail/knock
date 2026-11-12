@@ -243,6 +243,27 @@ Deploy with the cap at 20 (my own yes first). Fifty rows mixed on purpose throug
 - The rules were changed after I had seen the record, so this is a score on the list they were tuned on, not a test of them.
 - Not fixed: a name with a part in brackets, as "VINEBOX (Usual Beverage Co.)", is looked for whole on a page and so is seldom found there.
 
+#### One more set: the thin pages and some dead addresses (12 November 2026)
+
+- **The rows,** by a rule written before any name was looked at: all 32 rows whose home page is nearly empty and that were in no set, and 18 of the 45 whose address no longer exists, spread evenly over the sheet. All 50 were zombie by the free signs.
+- **How I said I would read it,** also before: the hard line is "no row from outside the list", and the count of usable rows is a number, not a bar.
+- **What came back.** 49 of 50 after one refill. One name came back that is not on the list as written: "Kenota", for the row I sent as "Kenota (formerly ExVivo Labs)". By the letter of my line that is one off the list, and my own check prints FAIL for it. No other company came back; it is the list's own row 535 under its short name, and Knock threw it away, so that row says "TinySet returned nothing". 28 rows are usable, against the 35 the gate asked of a mixed set. The other 21 came back without a source Knock could use, 18 of them with no link at all: for a dead company TinySet often says "no longer operates" and gives nothing to read.
+- **The books.** $1.60, which is what the wallet fell by (29.282 to 27.682): about three cents a row. Five sets, 200 rows, $7.30 in all, and the wallet has lost $7.30 since the morning (34.982 to 27.682). Three lines for pages, $0.04, were not charged and are out of the books.
+- **What changed.** 16 of the 50 are now zombie by rule 1, on a shutdown or a purchase with a source Knock read, where before they rested on an empty page or a dead address. Four verdicts changed: Roomstorm (running) from zombie to slowing down, Tara AI and Carbic (running) from zombie to "could not tell", and Seerslab (gone by the record) from zombie to alive, on a newspaper article of April 2026 that names it.
+- **The six running companies that had never been asked** all fell in this set, by the rule and not by choice: Roomstorm, Tara AI and Carbic as above; Pushbullet and Zidisha stay zombie, because TinySet says they operate and the newest date anyone could show is from 2022 and 2018; Notable Labs stays zombie, now on a shutdown in October 2024 with a source.
+- **The list after it,** against the record:
+
+| The record says | Alive | Slowing down | Zombie | Could not tell |
+|---|---|---|---|---|
+| Running (244) | 188 | 21 | 10 | 25 |
+| Bought (162) | 47 | 16 | 79 | 20 |
+| Gone (184) | 10 | 6 | 104 | 64 |
+
+- **The ten running companies still zombie.** Four have a shutdown or a merger with a source that Knock read (Cleanly, DemocracyOS, Flirtey, Notable Labs): there the record may be the one that is out of date. Five are said to operate, and the newest date anyone could show is more than three years old (Emailio, Pushbullet, Zidisha, MagicBus, Protonet). One has a home page last changed in 2015, and TinySet says it no longer operates (BuildScience).
+- **Not asked:** 27 addresses that no longer exist, 16 that are for sale, and 73 rows that say "could not tell" (51 of them answered with an error).
+- The deciding-again that follows a set ran on the tuned rules: the saved signs of all 590 rows give back the live list, 0 different.
+- This is still a score on the list the rules were tuned on.
+
 ## Slice 3: the board
 
 - **Task 15.** The pages in the look I chose: the wall, the departure board, a row's page, the working state.
