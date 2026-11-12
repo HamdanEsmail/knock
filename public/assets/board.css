@@ -1,0 +1,1064 @@
+/* Knock: a board of tiles fitted edge to edge. White page, navy ink, one small orange.
+   Every tile is a flat filled rectangle with square corners; nothing is outlined and
+   nothing casts a shadow. The list is the picture: one door for each row. */
+
+:root {
+  --bg: #ffffff;
+  --surface: #f4f4f2;
+  --ink: #1f2b4d;
+  --muted: #5d6479;
+  --accent: #f7941d;
+  --field: #05070a;
+  --band: #111728;
+  --warm: #e3e1dc;
+  --soft: #c9cede;
+  /* The doors: a light on, a light dimming, a light out, nobody could tell, not knocked on yet. */
+  --lit: #f7941d;
+  --dim: #8b93ad;
+  --out: #2a3558;
+  --unsure: #6f6a5f;
+  --unknocked: #151b2e;
+
+  --gap: 8px;
+  --pad: 24px;
+  --step-small: 0.9375rem;
+  --step-body: clamp(1.0625rem, 1rem + 0.2vw, 1.125rem);
+  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.5rem);
+  --step-head: clamp(2rem, 1.3rem + 2.6vw, 2.875rem);
+  --step-figure: clamp(3.5rem, 5.6vw, 5.0625rem);
+  --display: "Stack Sans Headline", "Stack Sans Text", system-ui, sans-serif;
+  --text: "Stack Sans Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html {
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-size-adjust: 100%;
+}
+body {
+  min-height: 100svh;
+  font: 400 var(--step-body) / 1.5 var(--text);
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+p a,
+li a,
+dd a {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  font-weight: 300;
+  letter-spacing: -0.022em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.skip {
+  position: absolute;
+  left: -200vw;
+  background: var(--ink);
+  color: #fff;
+  padding: 12px 16px;
+  z-index: 5;
+}
+.skip:focus {
+  left: var(--gap);
+  top: var(--gap);
+}
+
+/* ---- The board and its tiles ---- */
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--gap);
+  padding: var(--gap) var(--gap) 0;
+}
+.tile {
+  background: var(--surface);
+  padding: var(--pad);
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+}
+.tile.navy {
+  background: var(--ink);
+  color: #fff;
+}
+.tile.dark {
+  background: var(--field);
+  color: #fff;
+}
+.tile.warm {
+  background: var(--warm);
+}
+.tile.end {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.lead {
+  font-size: var(--step-lead);
+  line-height: 1.25;
+}
+.small {
+  font-size: var(--step-small);
+}
+
+/* The top row is itself tiles: the mark, the links, the one action. */
+.top {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) auto;
+  gap: var(--gap);
+  height: 60px;
+}
+.top > * {
+  display: flex;
+  align-items: center;
+}
+.mark {
+  background: var(--ink);
+  justify-content: center;
+}
+.links {
+  background: var(--surface);
+  padding-left: 50%;
+  gap: clamp(16px, 2.4vw, 36px);
+  font-size: var(--step-body);
+  white-space: nowrap;
+}
+.links a {
+  padding: 6px 0;
+  text-decoration: underline 2px transparent;
+  text-underline-offset: 6px;
+  transition: text-decoration-color 0.2s var(--ease);
+}
+.links a:hover,
+.links a[aria-current="page"] {
+  text-decoration-color: currentColor;
+}
+.act {
+  background: var(--ink);
+  color: #fff;
+  justify-content: center;
+  padding: 0 28px;
+  font-weight: 500;
+  font-size: var(--step-body);
+  transition: background-color 0.2s var(--ease);
+}
+.act:hover {
+  background: #2a3a66;
+}
+
+/* Buttons: flat, square, one fill. */
+.btn {
+  display: inline-block;
+  align-self: flex-start;
+  background: var(--accent);
+  color: var(--ink);
+  font: 500 var(--step-body) / 1.2 var(--text);
+  padding: 14px 22px;
+  border: 0;
+  cursor: pointer;
+  transition:
+    transform 0.15s var(--ease),
+    background-color 0.2s var(--ease);
+}
+.btn:hover {
+  background: #ffa63a;
+}
+.btn:active {
+  transform: translateY(2px);
+}
+.btn.ink {
+  background: var(--ink);
+  color: #fff;
+}
+.btn.ink:hover {
+  background: #2a3a66;
+}
+.btn.paper {
+  background: #fff;
+  color: var(--ink);
+}
+.btn.paper:hover {
+  background: var(--warm);
+}
+
+/* ---- The first screen: the name, the wall, one door, what it does, the way in ---- */
+
+.first {
+  grid-template-rows: 60px minmax(0, 1fr) minmax(0, 1fr);
+  height: max(100svh, 780px);
+  padding-bottom: var(--gap);
+}
+.name {
+  grid-column: span 6;
+  display: flex;
+  align-items: flex-end;
+}
+.name h1 {
+  font-size: clamp(96px, 13.6vw, 204px);
+  line-height: 0.86;
+}
+.wall {
+  grid-column: span 6;
+  background: var(--field);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+.wall p {
+  font-size: var(--step-small);
+  line-height: 1.45;
+  max-width: 54ch;
+}
+.cells {
+  display: grid;
+  grid-template-columns: repeat(var(--across, 34), minmax(0, 1fr));
+  gap: 3px;
+  align-content: start;
+}
+.cells i {
+  display: block;
+  aspect-ratio: 16 / 13;
+  background: var(--unknocked);
+}
+.cells .a {
+  background: var(--lit);
+}
+.cells .s {
+  background: var(--dim);
+}
+.cells .z {
+  background: var(--out);
+}
+.cells .u {
+  background: var(--unsure);
+}
+.one {
+  grid-column: span 6;
+  background: var(--warm);
+  display: flex;
+  gap: clamp(20px, 2.8vw, 40px);
+  align-items: flex-end;
+}
+.one svg {
+  flex: none;
+  height: min(100%, 300px);
+  width: auto;
+}
+.one h2 {
+  font-size: var(--step-head);
+  margin-bottom: 20px;
+}
+.try {
+  display: flex;
+  gap: var(--gap);
+  margin-bottom: 16px;
+}
+.try input {
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 0;
+  padding: 13px 16px;
+  width: min(250px, 100%);
+  min-width: 0;
+}
+.one p {
+  max-width: 24em;
+}
+.say {
+  grid-column: span 4;
+  background: var(--ink);
+  color: #fff;
+}
+.up {
+  grid-column: span 2;
+  gap: 20px;
+}
+.up .btn {
+  align-self: stretch;
+}
+
+/* ---- The departure board: one band for each row ---- */
+
+.list {
+  background: var(--field);
+  color: #fff;
+  padding: 0 12px;
+  margin-top: var(--gap);
+  display: grid;
+  gap: 4px;
+  overflow: hidden;
+}
+.list.cut > :first-child {
+  margin-top: -34px;
+}
+.list.cut > :last-child {
+  margin-bottom: -34px;
+}
+.list.whole {
+  padding-block: 12px;
+}
+.row {
+  background: var(--band);
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 3fr) minmax(0, 4fr) clamp(150px, 16vw, 230px);
+  align-items: center;
+  min-height: 76px;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 0.2s var(--ease);
+}
+a.row:hover,
+.row[open] {
+  background: #1a2238;
+}
+.row > * {
+  padding: 10px 0 10px var(--pad);
+  min-width: 0;
+}
+.row b {
+  font: 400 var(--step-lead) / 1.15 var(--text);
+  overflow-wrap: anywhere;
+}
+.row span {
+  line-height: 1.25;
+  color: var(--soft);
+}
+.row em {
+  font: 500 var(--step-body) / 1.1 var(--text);
+  font-style: normal;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  text-align: center;
+  color: var(--soft);
+}
+.row em.a {
+  background: var(--accent);
+  color: var(--ink);
+}
+.row em.s {
+  background: var(--warm);
+  color: var(--ink);
+}
+.row em.z {
+  background: var(--out);
+  color: #fff;
+}
+.row .because {
+  font-size: var(--step-small);
+  line-height: 1.4;
+  color: #fff;
+  padding-block: 14px;
+}
+
+/* ---- Lower rows of the board ---- */
+
+.how {
+  align-items: end;
+  padding-top: clamp(64px, 9vw, 140px);
+}
+.how > * {
+  grid-row: 1;
+}
+.how h2 {
+  grid-column: 1 / span 7;
+  font-size: var(--step-head);
+  align-self: start;
+  padding: 0 0 24px 4px;
+}
+.stage {
+  display: grid;
+  gap: 14px;
+}
+.stage .tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.stage h3 {
+  font: 500 var(--step-lead) / 1.2 var(--text);
+  letter-spacing: 0;
+}
+.stage p {
+  max-width: 44ch;
+}
+.stage.s1 {
+  grid-column: 1 / span 3;
+}
+.stage.s1 .tile {
+  height: 30vh;
+  min-height: 230px;
+}
+.stage.s2 {
+  grid-column: 4 / span 4;
+}
+.stage.s2 .tile {
+  height: 44vh;
+  min-height: 330px;
+}
+.stage.s3 {
+  grid-column: 8 / span 5;
+}
+.stage.s3 .tile {
+  height: 60vh;
+  min-height: 450px;
+}
+
+/* A fragment of what Knock itself writes down: a sign, as the sheet carries it. */
+.sign {
+  display: grid;
+  gap: 4px;
+  font-size: var(--step-small);
+  line-height: 1.35;
+}
+.sign > * {
+  background: #fff;
+  color: var(--ink);
+  padding: 10px 14px;
+  overflow-wrap: anywhere;
+}
+.sign > .k {
+  background: var(--ink);
+  color: #fff;
+  font-weight: 500;
+}
+.sign > .hit {
+  background: var(--accent);
+}
+.s3 .sign {
+  font-size: var(--step-body);
+}
+
+.figures {
+  padding-top: clamp(64px, 9vw, 140px);
+}
+.figure {
+  grid-column: span 3;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+}
+.figure b {
+  font: 300 var(--step-figure) / 0.9 var(--display);
+  letter-spacing: -0.022em;
+  font-variant-numeric: tabular-nums;
+}
+.figure.wide {
+  grid-column: span 6;
+}
+
+/* The way in: the tile that takes a spreadsheet. */
+.take {
+  padding-top: clamp(64px, 9vw, 140px);
+}
+.take .flank {
+  grid-column: span 2;
+  min-height: 420px;
+}
+.take .form {
+  grid-column: span 8;
+  background: var(--accent);
+  display: grid;
+  gap: 18px;
+  align-content: center;
+  padding: clamp(24px, 3.4vw, 48px);
+}
+.take h2 {
+  font-size: var(--step-head);
+}
+.take .small {
+  max-width: 56ch;
+}
+.take label {
+  display: grid;
+  gap: 6px;
+  font-weight: 500;
+}
+.take input[type="text"],
+.take input[type="url"],
+.take textarea,
+.take input[type="file"] {
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 0;
+  padding: 12px 14px;
+  width: 100%;
+}
+.take textarea {
+  min-height: 108px;
+  resize: vertical;
+}
+.take .pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+}
+.note {
+  background: var(--ink);
+  color: #fff;
+  padding: 14px 18px;
+  font-weight: 500;
+}
+
+/* ---- A list's page ---- */
+
+.title {
+  grid-column: span 7;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 14px;
+}
+.title h1 {
+  font-size: var(--step-head);
+}
+.title p {
+  max-width: 54ch;
+}
+.status {
+  grid-column: span 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 14px;
+}
+.now {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: var(--step-lead);
+  line-height: 1.2;
+}
+.pulse {
+  flex: none;
+  width: 14px;
+  height: 18px;
+  background: var(--accent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+}
+.bigwall {
+  grid-column: 1 / -1;
+}
+.bigwall .cells {
+  --across: 59;
+}
+.counts {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--gap);
+  list-style: none;
+}
+.counts a {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 132px;
+  padding: 18px var(--pad);
+  background: var(--surface);
+  transition: background-color 0.2s var(--ease);
+}
+.counts a:hover {
+  background: var(--warm);
+}
+.counts a[aria-current="true"] {
+  background: var(--ink);
+  color: #fff;
+}
+.counts b {
+  font: 300 var(--step-head) / 0.9 var(--display);
+  font-variant-numeric: tabular-nums;
+}
+.counts i {
+  display: inline-block;
+  width: 16px;
+  height: 13px;
+  margin-right: 8px;
+  background: var(--unknocked);
+}
+.counts i.a {
+  background: var(--lit);
+}
+.counts i.s {
+  background: var(--dim);
+}
+.counts i.z {
+  background: var(--out);
+}
+.counts i.u {
+  background: var(--unsure);
+}
+.pager {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: var(--gap);
+  justify-content: space-between;
+}
+
+/* ---- A row's page ---- */
+
+.door {
+  grid-column: span 4;
+  background: var(--warm);
+  display: flex;
+  align-items: flex-end;
+  min-height: 420px;
+}
+.door svg {
+  height: min(100%, 340px);
+  width: auto;
+}
+.verdict {
+  grid-column: span 8;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 18px;
+}
+.verdict h1 {
+  font-size: var(--step-head);
+}
+.verdict .block {
+  align-self: flex-start;
+  font: 500 var(--step-lead) / 1.1 var(--text);
+  padding: 12px 20px;
+  background: var(--band);
+  color: #fff;
+}
+.verdict .block.a {
+  background: var(--accent);
+  color: var(--ink);
+}
+.verdict .block.s {
+  background: var(--warm);
+  color: var(--ink);
+}
+.verdict .block.z {
+  background: var(--out);
+}
+.verdict.a {
+  background: var(--surface);
+}
+.signs {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--gap);
+}
+.signs > div {
+  grid-column: span 4;
+  background: var(--surface);
+  padding: var(--pad);
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  overflow-wrap: anywhere;
+}
+.signs > div.wide {
+  grid-column: span 8;
+}
+.signs dt {
+  font-weight: 500;
+}
+.signs dd {
+  color: var(--ink);
+}
+.signs ol {
+  padding-left: 1.2em;
+  display: grid;
+  gap: 6px;
+}
+
+/* ---- Text pages ---- */
+
+.prose {
+  grid-column: 1 / span 8;
+  display: grid;
+  gap: 14px;
+  padding: var(--pad);
+  background: var(--surface);
+}
+.prose h2 {
+  font: 500 var(--step-lead) / 1.2 var(--text);
+  letter-spacing: 0;
+  margin-top: 18px;
+}
+.prose p,
+.prose li {
+  max-width: 54ch;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.2em;
+  display: grid;
+  gap: 6px;
+}
+.prose pre {
+  background: var(--field);
+  color: #fff;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font: 0.9375rem / 1.5 ui-monospace, Consolas, monospace;
+}
+.prose code {
+  font: 0.9375em ui-monospace, Consolas, monospace;
+}
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 1rem;
+}
+.prose th,
+.prose td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 12px 10px 0;
+  border-bottom: 2px solid var(--bg);
+}
+.aside {
+  grid-column: span 4;
+  align-self: start;
+  display: grid;
+  gap: var(--gap);
+}
+
+/* ---- The foot: the mark built large, the totals, my name ---- */
+
+.foot {
+  margin-top: clamp(64px, 9vw, 140px);
+  padding-bottom: var(--gap);
+}
+.foot .mark-large {
+  grid-column: 1 / -1;
+  background: var(--warm);
+  height: 34svh;
+  min-height: 220px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: var(--pad) var(--pad) 0;
+}
+.mark-large i {
+  display: block;
+  flex: 1;
+  background: var(--out);
+}
+.mark-large i.a {
+  background: var(--lit);
+}
+.mark-large i.s {
+  background: var(--dim);
+}
+.mark-large i.u {
+  background: var(--unsure);
+}
+.mark-large i.h1 {
+  height: 100%;
+}
+.mark-large i.h2 {
+  height: 88%;
+}
+.mark-large i.h3 {
+  height: 76%;
+}
+.mark-large i.h4 {
+  height: 66%;
+}
+.foot .tile {
+  grid-column: span 6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 28px;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 18px;
+}
+.foot .tile a {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* ---- Movement: the wall takes its lights, a row arrives ---- */
+
+@keyframes light {
+  from {
+    background-color: var(--unknocked);
+  }
+}
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* The doors take their lights a few at a time, scattered across the wall. */
+  .cells.lights i {
+    animation: light 0.6s var(--ease) both;
+  }
+  .cells.lights i:nth-child(13n + 1) {
+    animation-delay: 490ms;
+  }
+  .cells.lights i:nth-child(13n + 2) {
+    animation-delay: 70ms;
+  }
+  .cells.lights i:nth-child(13n + 3) {
+    animation-delay: 560ms;
+  }
+  .cells.lights i:nth-child(13n + 4) {
+    animation-delay: 140ms;
+  }
+  .cells.lights i:nth-child(13n + 5) {
+    animation-delay: 630ms;
+  }
+  .cells.lights i:nth-child(13n + 6) {
+    animation-delay: 210ms;
+  }
+  .cells.lights i:nth-child(13n + 7) {
+    animation-delay: 700ms;
+  }
+  .cells.lights i:nth-child(13n + 8) {
+    animation-delay: 280ms;
+  }
+  .cells.lights i:nth-child(13n + 9) {
+    animation-delay: 770ms;
+  }
+  .cells.lights i:nth-child(13n + 10) {
+    animation-delay: 350ms;
+  }
+  .cells.lights i:nth-child(13n + 11) {
+    animation-delay: 840ms;
+  }
+  .cells.lights i:nth-child(13n + 12) {
+    animation-delay: 420ms;
+  }
+  .first .name h1,
+  .first .one > *,
+  .first .say,
+  .first .up > * {
+    animation: arrive 0.7s var(--ease) both;
+  }
+  .first .one > * {
+    animation-delay: 0.15s;
+  }
+  .first .say {
+    animation-delay: 0.25s;
+  }
+  .first .up > * {
+    animation-delay: 0.35s;
+  }
+  @supports (animation-timeline: view()) {
+    .list .row,
+    .stage,
+    .figure,
+    .take .form > *,
+    .counts li,
+    .signs > div {
+      animation: arrive 1s var(--ease) both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+  }
+}
+
+/* ---- A phone: its own board, one column ---- */
+
+@media (max-width: 860px) {
+  :root {
+    --gap: 6px;
+    --pad: 18px;
+  }
+  .board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .board > * {
+    grid-column: 1 / -1;
+  }
+  .top {
+    grid-template-columns: 52px minmax(0, 1fr);
+    height: 52px;
+  }
+  .links {
+    padding-left: 16px;
+    gap: 16px;
+    font-size: var(--step-small);
+  }
+  .links .wide {
+    display: none;
+  }
+  .act {
+    display: none;
+  }
+  .first {
+    grid-template-rows: none;
+    height: auto;
+  }
+  .name {
+    min-height: 30svh;
+  }
+  .name h1 {
+    font-size: 22vw;
+  }
+  .wall {
+    min-height: 0;
+  }
+  .cells {
+    --across: 26;
+    gap: 2px;
+  }
+  .bigwall .cells {
+    --across: 26;
+  }
+  .one {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .one svg {
+    height: 120px;
+  }
+  .first .say,
+  .first .up {
+    min-height: 0;
+  }
+  .list {
+    padding: 0 6px;
+  }
+  .row {
+    grid-template-columns: minmax(0, 1fr) 124px;
+    min-height: 64px;
+  }
+  .row > .seen {
+    display: none;
+  }
+  .row > .because {
+    grid-column: 1 / -1;
+    order: 3;
+    padding: 0 var(--pad) 14px;
+  }
+  .how > * {
+    grid-row: auto;
+  }
+  .how h2,
+  .stage.s1,
+  .stage.s2,
+  .stage.s3 {
+    grid-column: 1 / -1;
+  }
+  .stage.s1 .tile {
+    height: 34vw;
+    min-height: 0;
+  }
+  .stage.s2 .tile {
+    height: auto;
+    min-height: 46vw;
+  }
+  .stage.s3 .tile {
+    height: auto;
+    min-height: 62vw;
+  }
+  .figure,
+  .figure.wide {
+    grid-column: span 1;
+    min-height: 150px;
+  }
+  .figure.wide {
+    grid-column: 1 / -1;
+  }
+  .take .flank {
+    grid-column: span 1;
+    min-height: 120px;
+    order: 2;
+  }
+  .take .form {
+    grid-column: 1 / -1;
+  }
+  .take .pair {
+    grid-template-columns: 1fr;
+  }
+  .title,
+  .status {
+    min-height: 0;
+  }
+  .counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .counts li:first-child {
+    grid-column: 1 / -1;
+  }
+  .counts a {
+    min-height: 96px;
+  }
+  .door {
+    min-height: 0;
+  }
+  .door svg {
+    height: 150px;
+  }
+  .signs > div,
+  .signs > div.wide {
+    grid-column: 1 / -1;
+  }
+  .foot .tile {
+    grid-column: 1 / -1;
+  }
+  .foot .mark-large {
+    height: 22svh;
+    min-height: 140px;
+  }
+  .mark-large i:nth-child(2n) {
+    display: none;
+  }
+}

@@ -9,19 +9,24 @@ import { carryOn } from "./list/carry";
 import { createList, type NewList } from "./list/create";
 import { countsOf, rowOut, sheetOut } from "./list/csv-out";
 import { FIRST_LEG } from "./list/run";
-import { deleteList, featuredList, getList, listRows, patchList, totals } from "./list/store";
+import { deleteList, featuredList, getList, listRows, patchList, totals, type Totals } from "./list/store";
 import { handOver } from "./list/workflow";
 import { setsOf } from "./outside/store";
 import { carryOnSet, startWave, type WaveAsk } from "./outside/wave";
 import { startSetRun } from "./outside/workflow";
+import { HowPage } from "./site/how";
 import { Layout } from "./site/layout";
-import { Home, ListPage, NotFound } from "./site/pages";
+import { knockOnce, visitorKey } from "./one/knock";
+import { Home, ListPage, NotFound, OneDoorPage, OneDoorRefused, RowPage } from "./site/pages";
 import { CARRIED, NOTES } from "./site/words";
 
 type AppContext = Context<{ Bindings: Env }>;
 
 const VERDICTS: readonly Verdict[] = ["alive", "slowing down", "zombie", "could not tell"];
-const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
+const CSP = "default-src 'none'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
+
+/** Rows of each verdict shown on the first page's board. */
+const SAMPLE_EACH = 3;
 
 /** Rows the API gives in one answer, at most. */
 const API_ROWS_MAX = 200;
@@ -35,11 +40,13 @@ export function createApp() {
   };
   const root = (c: AppContext): string => c.env.PUBLIC_BASE_URL.replace(/\/$/, "");
   const start = (c: AppContext) => (id: string) => handOver(c.env, id, 0, FIRST_LEG);
+  /** A key for whoever is asking, without their address; null when it is me. */
+  const visitor = async (c: AppContext): Promise<string | null> => (isAdmin(c) ? null : visitorKey(c.env, c.req.header("cf-connecting-ip") ?? "unknown"));
   const whole = (v: string | undefined, fallback: number): number => (v !== undefined && /^\d{1,6}$/.test(v) ? Number(v) : fallback);
 
-  async function page(c: AppContext, props: { title: string; description: string; refresh?: number; status?: ContentfulStatusCode }, children: Child) {
+  async function page(c: AppContext, props: { title: string; description: string; refresh?: number; status?: ContentfulStatusCode; totals?: Totals }, children: Child) {
     const body = (
-      <Layout title={props.title} description={props.description} refresh={props.refresh} totals={await totals(c.env.DB)}>
+      <Layout title={props.title} description={props.description} refresh={props.refresh} totals={props.totals ?? (await totals(c.env.DB))}>
         {children}
       </Layout>
     );
@@ -131,6 +138,19 @@ export function createApp() {
     return c.json({ state, message: CARRIED[state] });
   });
 
+  app.post("/api/knock", async (c) => {
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      body = null;
+    }
+    const address = typeof body === "object" && body !== null && typeof (body as { address?: unknown }).address === "string" ? (body as { address: string }).address : "";
+    const got = await knockOnce(c.env, address, await visitor(c), new Date());
+    if (!got.ok) return c.json({ error: got.code, message: got.message }, got.status as ContentfulStatusCode);
+    return c.json({ ...rowOut(got.row), search_busy: got.searchBusy });
+  });
+
   // ---- My own routes ----
 
   const forbidden = (c: AppContext) => c.json({ error: "forbidden", message: "This route needs the admin token." }, 403);
@@ -185,11 +205,30 @@ export function createApp() {
 
   app.get("/", async (c) => {
     const code = c.req.query("note") ?? "";
+    const featured = await featuredList(c.env.DB);
+    const t = await totals(c.env.DB);
+    // A few rows of each verdict from the example list, so the board on the first page is real.
+    const sample = featured === null ? [] : (await Promise.all((["alive", "slowing down", "zombie"] as const).map((verdict) => listRows(c.env.DB, featured.id, { from: 0, count: SAMPLE_EACH, verdict })))).flat();
     return page(
       c,
-      { title: "Knock: still listed, but is anybody home?", description: "Hand in a spreadsheet of companies and get it back with a verdict, a last-seen date and evidence links on every row." },
-      <Home note={Object.hasOwn(NOTES, code) ? NOTES[code]! : null} featured={await featuredList(c.env.DB)} />,
+      { title: "Knock: still listed, but is anybody home?", description: "Hand in a spreadsheet of companies and get it back with a verdict, a last-seen date and evidence links on every row.", totals: t },
+      <Home note={Object.hasOwn(NOTES, code) ? NOTES[code]! : null} featured={featured} sample={sample} totals={t} />,
     );
+  });
+
+  app.get("/how", async (c) => {
+    const t = await totals(c.env.DB);
+    return page(
+      c,
+      { title: "How Knock tells who is home · Knock", description: "The six signs Knock reads for every row, the nine rules that decide, where TinySet comes in, what it costs, and the API.", totals: t },
+      <HowPage base={root(c)} totals={t} />,
+    );
+  });
+
+  // "The example" in the top row: the list on the first page.
+  app.get("/example", async (c) => {
+    const featured = await featuredList(c.env.DB);
+    return c.redirect(featured === null ? "/" : `/l/${featured.id}`, 302);
   });
 
   app.post("/lists", async (c) => {
@@ -198,7 +237,7 @@ export function createApp() {
     const pasted = typeof fields.csv === "string" ? fields.csv : "";
     const csv = file instanceof File && file.size > 0 ? await file.text() : pasted;
     const made = await createList(c.env, { csv, title: fields.title }, "visitor", new Date(), start(c));
-    return c.redirect(made.ok ? `/l/${made.id}` : `/?note=${made.code}`, 303);
+    return c.redirect(made.ok ? `/l/${made.id}` : `/?note=${made.code}#take`, 303);
   });
 
   app.get("/l/:id", async (c) => {
@@ -214,6 +253,24 @@ export function createApp() {
       { title: `${list.title} · Knock`, description: `${list.rowCount} companies, each with a verdict and its evidence.`, refresh: list.status === "working" ? 15 : list.status === "waiting" ? 60 : undefined },
       <ListPage list={list} rows={rows} from={from} verdict={verdict} note={Object.hasOwn(NOTES, code) ? NOTES[code]! : null} />,
     );
+  });
+
+  // One row: its door, its verdict and every sign behind it. Rows are numbered from 1, as in the sheet.
+  app.get("/l/:id/r/:row", async (c) => {
+    const list = await getList(c.env.DB, c.req.param("id"));
+    const at = whole(c.req.param("row"), 0) - 1;
+    const row = list && at >= 0 ? (await listRows(c.env.DB, list.id, { from: at, count: 1 }))[0] : undefined;
+    if (!list || row === undefined || row.n !== at) return notFound(c);
+    return page(c, { title: `${row.name} · ${list.title} · Knock`, description: row.why ?? `Row ${at + 1} of ${list.title}.` }, <RowPage list={list} row={row} />);
+  });
+
+  // One door, asked while the visitor waits. A plain visit to the address goes to the first page.
+  app.get("/knock", (c) => c.redirect("/", 302));
+  app.post("/knock", async (c) => {
+    const fields = await c.req.parseBody().catch(() => ({}) as Record<string, unknown>);
+    const got = await knockOnce(c.env, typeof fields.address === "string" ? fields.address : "", await visitor(c), new Date());
+    if (!got.ok) return page(c, { title: "Nobody knocked · Knock", description: got.message, status: got.status as ContentfulStatusCode }, <OneDoorRefused message={got.message} />);
+    return page(c, { title: `${got.row.name}: ${got.row.verdict} · Knock`, description: got.row.why ?? "What one door answered." }, <OneDoorPage row={got.row} searchBusy={got.searchBusy} />);
   });
 
   app.post("/l/:id/carry-on", async (c) => {

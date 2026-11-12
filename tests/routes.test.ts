@@ -239,6 +239,53 @@ describe("carry on", () => {
   });
 });
 
+describe("the board's other pages", () => {
+  it("shows a row with its door, its verdict and every sign, and nothing for a row that is not there", async () => {
+    const id = await handIn();
+    await env.DB.prepare("UPDATE rows SET verdict = 'zombie', rule = 3, why = 'The address no longer exists. It was asked twice.', evidence = '[\"https://stripe.com/\"]', checked_on = '2026-11-12' WHERE list_id = ? AND n = 0")
+      .bind(id)
+      .run();
+    const html = await (await call(`/l/${id}/r/1`)).text();
+    expect(html).toContain("Stripe");
+    expect(html).toContain("The address no longer exists. It was asked twice.");
+    expect(html).toContain("A door with its light out");
+    expect(html).toContain("Checked on 12 Nov 2026.");
+    expect(html).toContain(`href="/l/${id}"`);
+    expect(html).toContain("TinySet was not asked about this row.");
+    expect((await call(`/l/${id}/r/0`)).status).toBe(404);
+    expect((await call(`/l/${id}/r/99`)).status).toBe(404);
+    expect((await call("/l/nosuchlist/r/1")).status).toBe(404);
+  });
+
+  it("explains how it works, with the API written for this site's own address", async () => {
+    const html = await (await call("/how")).text();
+    expect(html).toContain("The six signs");
+    expect(html).toContain("Where TinySet comes in");
+    expect(html).toContain("https://knock.test/api/lists");
+    expect(html).toContain("Built by");
+  });
+
+  it("sends The example to the list on the first page, and to the first page when there is none", async () => {
+    expect((await call("/example")).headers.get("location")).toBe("/");
+    const id = await handIn();
+    await env.DB.prepare("UPDATE lists SET featured = 1 WHERE id = ?").bind(id).run();
+    expect((await call("/example")).headers.get("location")).toBe(`/l/${id}`);
+    const home = await (await call("/")).text();
+    expect(home).toContain(`href="/l/${id}"`);
+    expect(home).toContain("One door for each company, by Knock&#39;s own check.");
+  });
+
+  it("knocks on one door only when asked by the form, and refuses what is not an address", async () => {
+    expect((await call("/knock")).headers.get("location")).toBe("/");
+    const refused = await call("/knock", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "address=not+an+address" });
+    expect(refused.status).toBe(400);
+    expect(await refused.text()).toContain("That is not a web address Knock can ask.");
+    const api = await post("/api/knock", { address: "" });
+    expect(api.status).toBe(400);
+    expect(await api.json()).toMatchObject({ error: "bad_address" });
+  });
+});
+
 describe("my own routes", () => {
   it("need the admin token", async () => {
     const id = await handIn();
@@ -302,7 +349,8 @@ describe("the pages", () => {
 
     const refused = await call("/lists", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ csv: "" }).toString() });
     expect(refused.status).toBe(303);
-    expect(refused.headers.get("location")).toBe("/?note=empty_sheet");
+    // A refusal comes back to the form itself, lower on the first page.
+    expect(refused.headers.get("location")).toBe("/?note=empty_sheet#take");
     expect(await (await call("/?note=empty_sheet")).text()).toContain("The sheet is empty.");
   });
 

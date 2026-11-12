@@ -10,3 +10,4 @@ dist/
 *.log
 .vitest/
 .superpowers/
+.taste-skill/
