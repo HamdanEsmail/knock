@@ -9,6 +9,7 @@ const FONTS = "https://fonts.googleapis.com/css2?family=Stack+Sans+Headline:wght
 const STYLES = "/assets/board.css?v=1";
 
 export const AUTHOR_URL = "https://github.com/HamdanEsmail";
+export const REPO_URL = "https://github.com/HamdanEsmail/knock";
 
 export function Layout(props: { title: string; description: string; refresh?: number; totals: Totals; children?: Child }) {
   const t = props.totals;
@@ -47,6 +48,7 @@ export function Layout(props: { title: string; description: string; refresh?: nu
               <a href={AUTHOR_URL} rel="author">
                 Hamdan Esmail
               </a>
+              . The code is on <a href={REPO_URL}>GitHub</a>
             </span>
             <a href="/how#api">The API</a>
           </div>

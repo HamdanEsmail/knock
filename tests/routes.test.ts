@@ -291,6 +291,11 @@ describe("my own routes", () => {
     const id = await handIn();
     expect((await call(`/api/admin/lists/${id}`, { method: "DELETE" })).status).toBe(403);
     expect((await call(`/api/admin/lists/${id}/feature`, { method: "POST" })).status).toBe(403);
+    // Only the whole token opens them: not one of the same length, not one that starts or ends with it.
+    for (const wrong of ["Bearer test-admiN", "Bearer test-admin-and-more", "Bearer test-adm", "test-admin", "bearer test-admin", "Bearer  test-admin"]) {
+      expect((await call(`/api/admin/lists/${id}/feature`, { method: "POST", headers: { authorization: wrong } })).status, wrong).toBe(403);
+    }
+    expect((await call(`/api/admin/lists/${id}/feature`, { method: "POST", headers: admin })).status).toBe(200);
   });
 
   it("put a list on the first page and remove a list", async () => {
@@ -346,6 +351,8 @@ describe("the pages", () => {
     const html = await res.text();
     expect(html).toContain('<meta name="author" content="Hamdan Esmail"');
     expect(html).toMatch(/Built by <a href="https:\/\/github\.com\/HamdanEsmail" rel="author"[^>]*>Hamdan Esmail<\/a>/);
+    // The code is public, and the foot of every page links it.
+    expect(html).toMatch(/The code is on\s*<a href="https:\/\/github\.com\/HamdanEsmail\/knock">\s*GitHub\s*<\/a>/);
     expect(html).toContain('action="/lists"');
     expect(html).toContain('type="file"');
     expect(res.headers.get("content-security-policy")).toContain("default-src 'none'");

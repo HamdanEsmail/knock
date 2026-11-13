@@ -33,12 +33,19 @@ const SAMPLE_EACH = 3;
 /** Rows the API gives in one answer, at most. */
 const API_ROWS_MAX = 200;
 
+/** Compares two strings without stopping at the first difference, so the time it takes says nothing about where they differ. */
+function same(a: string, b: string): boolean {
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < b.length; i++) diff |= (a.charCodeAt(i) || 0) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 export function createApp() {
   const app = new Hono<{ Bindings: Env }>();
 
   const isAdmin = (c: AppContext): boolean => {
     const given = c.req.header("authorization") ?? "";
-    return c.env.ADMIN_TOKEN !== undefined && c.env.ADMIN_TOKEN !== "" && given === `Bearer ${c.env.ADMIN_TOKEN}`;
+    return c.env.ADMIN_TOKEN !== undefined && c.env.ADMIN_TOKEN !== "" && same(given, `Bearer ${c.env.ADMIN_TOKEN}`);
   };
   const root = (c: AppContext): string => c.env.PUBLIC_BASE_URL.replace(/\/$/, "");
   const start = (c: AppContext) => (id: string) => handOver(c.env, id, 0, FIRST_LEG);
